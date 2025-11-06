@@ -402,16 +402,30 @@ function App() {
     const bigTraffic = Math.round(totalCost * (0.15 + Math.random() * 0.06));
     const pool       = totalCost - bigTraffic;      // 剩余给 daily
   
-    // 每天基础额度（首尾稍高）
+    // 每天基础额度：设x为预算/天数
+    const x = Math.round(pool / days);
+    
+    // 每天分配的预算
     const dailyPool = Array.from({ length: days }, (_, i) => {
       const isFirst = i === 0;
       const isLast  = i === days - 1;
-      let weight = 1;
-      if (isFirst || isLast) weight = 1.2;
-      return Math.round(pool * weight / (days - 1 + 1.2 * 2));
+      
+      // 第一天分配 x * 0.8
+      if (isFirst) return Math.round(x * 0.8);
+      
+      // 最后一天分配 x（后续会特殊处理）
+      if (isLast) return x;
+      
+      // 中间天数分配 x
+      return x;
     });
-    const sumWeight = dailyPool.reduce((a, b) => a + b, 0);
-    dailyPool.forEach((v, i) => { dailyPool[i] = Math.round(v * pool / sumWeight); });
+    
+    // 调整总预算确保等于 pool
+    const currentTotal = dailyPool.reduce((a, b) => a + b, 0);
+    if (currentTotal !== pool) {
+      // 将差值分配给第一天
+      dailyPool[0] += pool - currentTotal;
+    }
   
     // 生成 dailyPlan
     const fixedDaily = (jsonData.dailyPlan || []).map((item, i) => {
@@ -477,6 +491,29 @@ function App() {
         budget: `住宿: ¥${zhu}, 餐饮: ¥${can}, 交通: ¥${jiao}${men > 0 ? `, 门票: ¥${men}` : ''}${shopping > 0 ? `, 购物: ¥${shopping}` : ''}${entertainment > 0 ? `, 娱乐: ¥${entertainment}` : ''}`
       };
     });
+    
+    // 特殊处理最后一天的预算：将其餐饮、交通、购物、娱乐设置为第一天的50%
+    if (fixedDaily.length > 1) {
+      const lastDayIndex = fixedDaily.length - 1;
+      
+      // 解析第一天的各项费用
+      const firstDayBudget = fixedDaily[0].budget;
+      const firstDayCan = parseInt(firstDayBudget.match(/餐饮: ¥(\d+)/)?.[1] || 0);
+      const firstDayJiao = parseInt(firstDayBudget.match(/交通: ¥(\d+)/)?.[1] || 0);
+      const firstDayShopping = parseInt(firstDayBudget.match(/购物: ¥(\d+)/)?.[1] || 0);
+      const firstDayEntertainment = parseInt(firstDayBudget.match(/娱乐: ¥(\d+)/)?.[1] || 0);
+      
+      // 最后一天的费用设置为第一天的50%
+      const can = Math.max(0, Math.round(firstDayCan * 0.5));
+      const jiao = Math.max(0, Math.round(firstDayJiao * 0.5));
+      const shopping = Math.max(0, Math.round(firstDayShopping * 0.5));
+      const entertainment = Math.max(0, Math.round(firstDayEntertainment * 0.5));
+      const zhu = 0; // 最后一天住宿费用为0
+      const men = 0; // 最后一天门票费用为0
+      
+      // 更新最后一天的预算
+      fixedDaily[lastDayIndex].budget = `住宿: ¥${zhu}, 餐饮: ¥${can}, 交通: ¥${jiao}, 门票: ¥${men}, 购物: ¥${shopping}, 娱乐: ¥${entertainment}`;
+    }
     
     // 把「大交通」写进首尾天的 budget 字符串，方便 UI 展示
     if (fixedDaily[0]) {
@@ -716,22 +753,8 @@ function App() {
       // 设置标记标签（根据类型使用不同颜色）
       let labelContent = '';
       if (point.type === 'origin') {
-        labelContent = `
-          <div style="
-            background-color: #722ed1; 
-            color: white; 
-            border-radius: 16px; 
-            padding: 6px 12px; 
-            font-size: 14px; 
-            text-align: center; 
-            white-space: nowrap;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            font-weight: bold;
-            border: none;
-          ">
-            ${point.label}
-          </div>
-        `;
+        // 不为出发地点添加标签（删除紫色框）
+        labelContent = '';
       } else {
         labelContent = `
           <div style="
@@ -751,15 +774,20 @@ function App() {
         `;
       }
       
-      marker.setLabel({
-        content: labelContent,
-        offset: new window.AMap.Pixel(-10, 10)
-      });
+      // 仅对非出发地点设置标签
+      if (labelContent) {
+        marker.setLabel({
+          content: labelContent,
+          offset: new window.AMap.Pixel(-10, 10)
+        });
+      }
       
       // 创建信息窗口
       const infoWindow = new window.AMap.InfoWindow({
         content: `<div style="padding: 8px; font-weight: bold;">${point.label}</div>`,
-        offset: new window.AMap.Pixel(0, -30)
+        offset: new window.AMap.Pixel(0, -30),
+        borderWidth: 0,
+        borderColor: '#1890ff'
       });
       
       // 将标记和信息窗口添加到数组中
