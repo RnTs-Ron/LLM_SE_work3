@@ -1,0 +1,82 @@
+ai-travel-planner/
+├── frontend/                  # 前端应用
+│   ├── public/                # 静态资源文件
+│   │   ├── index.html         # 主页面
+│   │   ├── favicon.ico        # 网站图标
+│   │   └── manifest.json      # PWA配置文件
+│   ├── src/                   # 前端源代码
+│   │   ├── assets/            # 静态资源（图片、字体等）
+│   │   ├── components/        # 可复用组件
+│   │   │   ├── common/        # 通用组件
+│   │   │   ├── layout/        # 布局组件
+│   │   │   └── ui/            # UI控件组件
+│   │   ├── views/             # 页面视图组件
+│   │   │   ├── home/          # 首页
+│   │   │   ├── planner/       # 行程规划页
+│   │   │   ├── itinerary/     # 行程详情页
+│   │   │   ├── budget/        # 预算管理页
+│   │   │   ├── profile/       # 用户设置页
+│   │   │   └── auth/          # 登录注册页
+│   │   ├── services/          # 服务层（API调用）
+│   │   ├── store/             # 状态管理
+│   │   │   ├── modules/       # 模块化状态
+│   │   │   └── index.js       # 状态管理入口
+│   │   ├── utils/             # 工具函数
+│   │   ├── routes/            # 路由配置
+│   │   ├── App.jsx            # 根组件
+│   │   └── main.jsx           # 应用入口
+│   ├── package.json           # 前端依赖配置
+│   └── vite.config.js         # 构建配置
+├── backend/                   # 后端服务
+│   ├── src/                   # 后端源代码
+│   │   ├── controllers/       # 控制器层
+│   │   │   ├── auth.controller.js      # 认证控制器
+│   │   │   ├── user.controller.js      # 用户控制器
+│   │   │   ├── trip.controller.js      # 行程控制器
+│   │   │   ├── budget.controller.js    # 预算控制器
+│   │   │   └── preference.controller.js # 偏好控制器
+│   │   ├── services/          # 业务逻辑层
+│   │   │   ├── ai.service.js           # AI服务集成
+│   │   │   ├── map.service.js          # 地图服务
+│   │   │   ├── speech.service.js       # 语音服务
+│   │   │   └── recommendation.service.js # 推荐服务
+│   │   ├── models/            # 数据模型
+│   │   │   ├── user.model.js           # 用户模型
+│   │   │   ├── trip.model.js           # 行程模型
+│   │   │   ├── budget.model.js         # 预算模型
+│   │   │   └── preference.model.js     # 偏好模型
+│   │   ├── routes/            # 路由定义
+│   │   │   ├── api.routes.js           # API路由
+│   │   │   ├── auth.routes.js          # 认证路由
+│   │   │   └── index.js                # 路由入口
+│   │   ├── middleware/        # 中间件
+│   │   │   ├── auth.middleware.js      # 认证中间件
+│   │   │   ├── validation.middleware.js # 验证中间件
+│   │   │   └── error.middleware.js     # 错误处理中间件
+│   │   ├── utils/             # 工具函数
+│   │   ├── config/            # 配置文件
+│   │   │   ├── database.js             # 数据库配置
+│   │   │   ├── auth.js                 # 认证配置
+│   │   │   └── api.js                  # API配置
+│   │   ├── app.js             # Express应用实例
+│   │   └── server.js          # 服务器入口
+│   ├── package.json           # 后端依赖配置
+│   └── .env.example           # 环境变量示例
+├── shared/                    # 前后端共享代码
+│   └── constants/             # 共享常量
+├── docs/                      # 项目文档
+│   ├── api.md                 # API文档
+│   ├── architecture.md        # 架构文档
+│   ├── installation.md        # 安装指南
+│   └── user-guide.md          # 用户手册
+├── scripts/                   # 脚本文件
+│   ├── deploy.sh              # 部署脚本
+│   └── seed.js                # 数据填充脚本
+├── docker/                    # Docker配置
+│   ├── frontend/Dockerfile    # 前端Docker配置
+│   ├── backend/Dockerfile     # 后端Docker配置
+│   └── nginx/nginx.conf       # Nginx配置
+├── docker-compose.yml         # Docker编排文件
+├── .gitignore                 # Git忽略文件
+├── LICENSE                    # 许可证
+└── README.md                  # 项目说明文件
