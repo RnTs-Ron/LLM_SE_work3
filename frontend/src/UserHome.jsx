@@ -148,7 +148,7 @@ const UserHome = () => {
             >
               <HomeOutlined /> 主页
             </Button>
-            <Text style={{ color: 'white', marginRight: 16 }}>欢迎, {user?.email}</Text>
+            <Text style={{ color: 'white', marginRight: 16 }}>欢迎您, {user?.email}</Text>
             <Button 
               type="text" 
               icon={<LogoutOutlined />} 
@@ -171,7 +171,9 @@ const UserHome = () => {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
-          marginBottom: 24 
+          marginBottom: 24,
+          maxWidth: '800px',  // 与卡片最大宽度保持一致
+          margin: '0 auto 24px auto'  // 居中显示
         }}>
           <Title level={4} style={{ margin: 0 }}> </Title>
           <Button 
@@ -207,7 +209,11 @@ const UserHome = () => {
                 <Card 
                   hoverable
                   onClick={() => handleViewPlan(plan)}
-                  style={{ cursor: 'pointer' }}
+                  style={{ 
+                    cursor: 'pointer',
+                    maxWidth: '800px',  // 限制最大宽度
+                    margin: '0 auto'    // 居中显示
+                  }}
                 >
                   <Card.Meta
                     avatar={

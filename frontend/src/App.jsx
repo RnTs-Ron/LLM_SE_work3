@@ -228,6 +228,42 @@ function App() {
 
   // 从用户输入中提取信息
   function extractInfoFromInput(input) {
+    // 检查是否是重新开始的指令
+    const restartPatterns = [
+      /不好[，,]?\s*换一个/,
+      /换一个[，,]?\s*不好/,
+      /重新开始/,
+      /换一个/,
+      /重新来/,
+      /再来一次/,
+      /不好/,
+      /换方案/,
+      /换个方案/,
+      /重新规划/
+    ];
+    
+    // 如果匹配到重新开始的指令，清空当前计划和行程信息
+    for (const pattern of restartPatterns) {
+      if (pattern.test(input)) {
+        // 清除当前旅行计划
+        setTravelPlan(null);
+        // 清除旅行信息引用
+        travelInfoRef.current = {
+          origin: null,
+          destination: null,
+          days: null,
+          budget: null,
+          people: null
+        };
+        // 清除地图上的数据
+        if (mapInstance.current) {
+          mapInstance.current.clearMap();
+        }
+        // 返回空信息对象，触发重新询问
+        return {};
+      }
+    }
+    
     const info = {};
   
     /* 1. 出发地 + 目的地  支持「从A到B」 */
@@ -359,6 +395,19 @@ function App() {
   
     // 2.1 增量提取 & 非空合并
     const newInfo = extractInfoFromInput(userInput);
+    
+    // 检查是否是重新开始的指令
+    if (Object.keys(newInfo).length === 0) {
+      // 是重新开始的指令，发送提示消息
+      setMessages(prev => [...prev, { 
+        id: Date.now(), 
+        sender: 'ai', 
+        text: '好的，我们重新开始规划旅行！请告诉我您的出发地、目的地、计划天数、预算和出行人数。' 
+      }]);
+      setIsProcessing(false);
+      setPlanningLock(false);
+      return;
+    }
     
     // 更新旅行信息，保留之前已收集到的信息
     travelInfoRef.current = {
@@ -1056,7 +1105,7 @@ function App() {
                 保存计划
               </Button>
             )}
-            <Text style={{ color: 'white', marginRight: 16 }}>欢迎, {user?.email}</Text>
+            <Text style={{ color: 'white', marginRight: 16 }}>欢迎您, {user?.email}</Text>
             <Button 
               type="text" 
               icon={<LogoutOutlined />} 
@@ -1141,7 +1190,7 @@ function App() {
                       overflow: 'hidden'
                     }}>
                       <div style={{ 
-                        height: '500px',
+                        height: '570px',       // 调整高度与地图区域一致
                         display: 'flex',
                         flexDirection: 'column',
                         overflowY: 'auto', 
@@ -1255,8 +1304,8 @@ function App() {
                       ref={mapRef}
                       style={{ 
                         flex: 1,
-                        minHeight: '500px',
-                        margin: '0 0 24px 0',
+                        minHeight: '570px',
+                        margin: '0 0 0 0',
                         borderRadius: 8,
                         position: 'relative'
                       }}
@@ -1440,7 +1489,7 @@ function App() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              minHeight: '300px'
+                              minHeight: '340px'  // 调整高度保持一致性
                             }}
                           >
                             <div style={{ 
@@ -1550,7 +1599,7 @@ function App() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              minHeight: '300px'
+                              minHeight: '340px'  // 调整高度保持一致性
                             }}
                           >
                             <div style={{ 
