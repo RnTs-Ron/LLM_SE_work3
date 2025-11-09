@@ -304,9 +304,32 @@ function App() {
       const arabicDays = input.match(/(\d{1,2})[天日]/);
       if (arabicDays) { info.days = arabicDays[1]; }
       else {
-        const cnMap = {一:1,二:2,两:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9,十:10,十一:11,十二:12,十三:13,十四:14,十五:15,十六:16,十七:17,十八:18,十九:19,二十:20};
-        for (const [cn, num] of Object.entries(cnMap)) {
-          if (new RegExp(cn + '[天日]').test(input)) { info.days = String(num); break; }
+        // 添加对"一周"、"两周"等表达的支持
+        const weekMatch = input.match(/(一|二|两|三|四|五|六|七|八|九|十|十一|十二|十三|十四|十五|十六|十七|十八|十九|二十)[周週]/);
+        if (weekMatch) {
+          const cnMap = {
+            一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 
+            六: 6, 七: 7, 八: 8, 九: 9, 十: 10, 
+            十一: 11, 十二: 12, 十三: 13, 十四: 14, 十五: 15,
+            十六: 16, 十七: 17, 十八: 18, 十九: 19, 二十: 20
+          };
+          const weekNum = cnMap[weekMatch[1]];
+          if (weekNum) {
+            info.days = String(weekNum * 7); // 一周=7天
+          }
+        } else {
+          const cnMap = {
+            一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 
+            六: 6, 七: 7, 八: 8, 九: 9, 十: 10, 
+            十一: 11, 十二: 12, 十三: 13, 十四: 14, 十五: 15,
+            十六: 16, 十七: 17, 十八: 18, 十九: 19, 二十: 20
+          };
+          for (const [cn, num] of Object.entries(cnMap)) {
+            if (new RegExp(cn + '[天日]').test(input)) { 
+              info.days = String(num); 
+              break; 
+            }
+          }
         }
       }
       /* 4. 预算 - 统一用 parseBudget */
@@ -1057,10 +1080,10 @@ function App() {
           <Col span={24}>
             <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column' }}>
               {/* 对话区域和地图区域放在同一个容器中，左右并排 */}
-              <Card style={{ marginBottom: 24, height: 'calc(60vh + 240px)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', height: '100%' }}>
+              <Card style={{ marginBottom: 24, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', flex: 1 }}>
                   {/* 左侧对话区域 */}
-                  <div style={{ padding: '0 0 24px 0', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column' }}>
                     <Title level={4} style={{ 
                       display: 'flex', 
                       alignItems: 'center',
@@ -1115,21 +1138,18 @@ function App() {
                       flex: 1,
                       display: 'flex',
                       flexDirection: 'column',
-                      minHeight: '500px',
-                      maxHeight: '700px',
                       overflow: 'hidden'
                     }}>
                       <div style={{ 
-                        height: '60vh', 
-                        minHeight: '500px',
-                        maxHeight: '700px',
+                        height: '500px',
+                        display: 'flex',
+                        flexDirection: 'column',
                         overflowY: 'auto', 
                         marginBottom: '20px',
                         background: '#fafafa',
                         borderRadius: 6,
                         padding: '16px',
                         border: '1px solid #f0f0f0',
-                        flex: 1
                       }}>
                         <List
                           dataSource={messages}
@@ -1168,23 +1188,34 @@ function App() {
                         />
                       </div>
                       
-                      <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '16px'
+                      }}>
                         <TextArea
-                          rows={4}
+                          rows={3}
                           placeholder="描述您的旅行需求，如：我们准备从北京出发去上海旅游6天，预算1万2千元，2个人。"
                           value={inputValue}
                           onChange={(e) => setInputValue(e.target.value)}
                           onPressEnter={handleSend}
                           disabled={isProcessing}
+                          style={{ flex: 1 }}
                         />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: '12px'
+                        }}>
                           <Steps 
                             current={currentStep} 
                             items={steps.map(item => ({ ...item, key: item.title }))}
                             size="small"
-                            style={{ flex: 1, marginRight: 16 }}
+                            style={{ flex: 1, marginRight: 16, minWidth: '200px' }}
                           />
-                          <div style={{ display: 'flex', gap: 8 }}>
+                          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                             <Button 
                               type="default" 
                               icon={<AudioOutlined />} 
@@ -1203,12 +1234,12 @@ function App() {
                             </Button>
                           </div>
                         </div>
-                      </Space>
+                      </div>
                     </div>
                   </div>
                   
                   {/* 右侧地图区域 */}
-                  <div style={{ padding: '0 0 24px 0', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ flex: 1, minWidth: '300px', padding: '0 0 24px 0', display: 'flex', flexDirection: 'column' }}>
                     <Title level={4} style={{ 
                       display: 'flex', 
                       alignItems: 'center',
@@ -1224,6 +1255,7 @@ function App() {
                       ref={mapRef}
                       style={{ 
                         flex: 1,
+                        minHeight: '500px',
                         margin: '0 0 24px 0',
                         borderRadius: 8,
                         position: 'relative'
@@ -1283,261 +1315,265 @@ function App() {
                   boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
                 }}
               >
-                <Row gutter={24} style={{ minHeight: '500px' }}>
-                  {/* 左侧基本信息区域 */}
-                  <Col span={12} style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <Title level={4} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center',
-                        gap: 8,
-                        margin: '0 0 24px 0'
-                      }}>
-                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
-                        旅行规划结果 - 基本信息
-                      </Title>
-                      
-                      {travelPlan ? (
-                        <Card
-                          style={{
-                            background: 'linear-gradient(to right, #f9f0ff, #f0f5ff)',
-                            borderRadius: 8,
-                            flex: 1,
-                            display: 'flex',
-                            flexDirection: 'column'
-                          }}
-                          bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
-                        >
-                          <Descriptions 
-                            column={1} 
-                            bordered
-                            size="middle"
-                            labelStyle={{
-                              fontWeight: 'bold',
-                              backgroundColor: '#fafafa'
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Row gutter={24} style={{ flex: 1 }}>
+                    {/* 左侧基本信息区域 */}
+                    <Col span={12} style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        <Title level={4} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          gap: 8,
+                          margin: '0 0 24px 0'
+                        }}>
+                          <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
+                          基本信息
+                        </Title>
+                        
+                        {travelPlan ? (
+                          <Card
+                            style={{
+                              background: 'linear-gradient(to right, #f9f0ff, #f0f5ff)',
+                              borderRadius: 8,
+                              flex: 1,
+                              display: 'flex',
+                              flexDirection: 'column'
                             }}
-                            style={{ flex: 1 }}
+                            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
                           >
-                            {travelPlan.origin && (
-                              <Descriptions.Item label={<><EnvironmentOutlined /> 出发地</>}>
-                                <Text strong style={{ fontSize: '16px' }}>{travelPlan.origin}</Text>
-                              </Descriptions.Item>
-                            )}
-                            <Descriptions.Item label={<><EnvironmentOutlined /> 目的地</>}>
-                              <Text strong style={{ fontSize: '16px' }}>{travelPlan.destination}</Text>
-                            </Descriptions.Item>
-                            <Descriptions.Item label={<><ClockCircleOutlined /> 行程时长</>}>
-                              <Badge 
-                                count={travelPlan.duration} 
-                                style={{ backgroundColor: '#722ed1' }} 
-                                overflowCount={99}
-                              />
-                            </Descriptions.Item>
-                            <Descriptions.Item label={<><CalendarOutlined /> 出发日期</>}>
-                              <Text strong>{travelPlan.startDate}</Text>
-                            </Descriptions.Item>
-                            <Descriptions.Item label={<><DollarCircleOutlined /> 预算</>}>
-                              <Tag icon={<DollarCircleOutlined />} color="green">
-                                {travelPlan.budget}
-                              </Tag>
-                            </Descriptions.Item>
-                            <Descriptions.Item label={<><DollarCircleOutlined /> 总花费</>}>
-                              <Tag icon={<DollarCircleOutlined />} color="blue">
-                                {calculateTotalBudget(travelPlan.dailyPlan)}
-                              </Tag>
-                            </Descriptions.Item>
-                          </Descriptions>
-
-                          {(travelPlan.highlights && travelPlan.highlights.length > 0) && (
-                            <Card 
-                              title={<><StarOutlined style={{ color: '#faad14' }} /> 亮点推荐</>} 
-                              style={{ 
-                                marginTop: 24,
-                                background: 'linear-gradient(to right, #fffbe6, #ffffff)',
-                                borderRadius: 8,
-                                flex: 1
+                            <Descriptions 
+                              column={1} 
+                              bordered
+                              size="middle"
+                              labelStyle={{
+                                fontWeight: 'bold',
+                                backgroundColor: '#fafafa'
                               }}
-                              headStyle={{ 
-                                borderBottom: '1px solid #ffe58f',
-                                padding: '0 12px'
-                              }}
+                              style={{ flex: 1 }}
                             >
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                                {travelPlan.highlights.map((highlight, index) => (
-                                  <Tag 
-                                    key={index}
-                                    icon={<StarOutlined />}
-                                    color="gold"
-                                    style={{
-                                      padding: '6px 12px',
-                                      fontSize: '14px',
-                                      borderRadius: 20
-                                    }}
-                                  >
-                                    {highlight}
-                                  </Tag>
-                                ))}
-                              </div>
-                            </Card>
-                          )}
-                          
-                          <div style={{ marginTop: 24, textAlign: 'center' }}>
-                            <Button 
-                              type="primary" 
-                              icon={<SaveOutlined />}
-                              onClick={() => {
-                                savePlanToDatabase(travelPlan);
-                                message.success('旅行计划已保存！');
-                              }}
-                              style={{
-                                borderRadius: 20,
-                                padding: '6px 16px'
-                              }}
-                            >
-                              保存旅行计划
-                            </Button>
-                          </div>
-                        </Card>
-                      ) : (
-                        <Card
-                          style={{
-                            background: 'linear-gradient(to right, #f9f0ff, #f0f5ff)',
-                            borderRadius: 8,
-                            flex: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <div style={{ 
-                            textAlign: 'center'
-                          }}>
-                            <Avatar 
-                              size={48} 
-                              icon={<RobotOutlined />} 
-                              style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
-                            />
-                            <Title level={5} style={{ marginTop: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
-                              等待生成旅行计划
-                            </Title>
-                            <Text type="secondary" style={{ fontSize: '12px' }}>
-                              描述您的旅行需求，AI助手将为您生成个性化的旅行方案
-                            </Text>
-                          </div>
-                        </Card>
-                      )}
-                    </div>
-                  </Col>
-                  
-                  {/* 右侧详细行程区域 */}
-                  <Col span={12} style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <Title level={4} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center',
-                        gap: 8,
-                        margin: '0 0 24px 0'
-                      }}>
-                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
-                        详细行程
-                      </Title>
-                      
-                      {travelPlan ? (
-                        <Card 
-                          extra={
-                            <Tag 
-                              icon={<DollarCircleOutlined />} 
-                              color="blue" 
-                              style={{ 
-                                fontSize: '16px', 
-                                padding: '6px 12px',
-                                borderRadius: 20
-                              }}
-                            >
-                              总花费: {calculateTotalBudget(travelPlan.dailyPlan)}
-                            </Tag>
-                          }
-                          style={{
-                            background: 'linear-gradient(to right, #f0f5ff, #f9f0ff)',
-                            borderRadius: 8,
-                            flex: 1,
-                            display: 'flex',
-                            flexDirection: 'column'
-                          }}
-                          bodyStyle={{ 
-                            flex: 1, 
-                            display: 'flex', 
-                            flexDirection: 'column',
-                            padding: '20px 0 0 0'
-                          }}
-                          headStyle={{
-                            borderBottom: '1px solid #e8e8e8'
-                          }}
-                        >
-                          <div style={{ flex: 1, overflow: 'auto' }}>
-                            <List
-                              itemLayout="vertical"
-                              dataSource={travelPlan.dailyPlan}
-                              renderItem={(item, index) => (
-                                <List.Item style={{ alignItems: 'flex-start' }}>
-                                  <List.Item.Meta
-                                    description={
-                                      <div>
-                                        <Paragraph style={{ fontSize: '16px', marginBottom: 8 }}>
-                                          {typeof item === 'string' ? item : item.description}
-                                        </Paragraph>
-                                        {item.budget && (
-                                          <Tag 
-                                            icon={<DollarCircleOutlined />} 
-                                            color="success"
-                                            style={{
-                                              fontSize: '12px',
-                                              padding: '2px 8px'
-                                            }}
-                                          >
-                                            预算: {item.budget}
-                                          </Tag>
-                                        )}
-                                      </div>
-                                    }
-                                  />
-                                </List.Item>
+                              {travelPlan.origin && (
+                                <Descriptions.Item label={<><EnvironmentOutlined /> 出发地</>}>
+                                  <Text strong style={{ fontSize: '16px' }}>{travelPlan.origin}</Text>
+                                </Descriptions.Item>
                               )}
-                            />
+                              <Descriptions.Item label={<><EnvironmentOutlined /> 目的地</>}>
+                                <Text strong style={{ fontSize: '16px' }}>{travelPlan.destination}</Text>
+                              </Descriptions.Item>
+                              <Descriptions.Item label={<><ClockCircleOutlined /> 行程时长</>}>
+                                <Badge 
+                                  count={travelPlan.duration} 
+                                  style={{ backgroundColor: '#722ed1' }} 
+                                  overflowCount={99}
+                                />
+                              </Descriptions.Item>
+                              <Descriptions.Item label={<><CalendarOutlined /> 出发日期</>}>
+                                <Text strong>{travelPlan.startDate}</Text>
+                              </Descriptions.Item>
+                              <Descriptions.Item label={<><DollarCircleOutlined /> 预算</>}>
+                                <Tag icon={<DollarCircleOutlined />} color="green">
+                                  {travelPlan.budget}
+                                </Tag>
+                              </Descriptions.Item>
+                              <Descriptions.Item label={<><DollarCircleOutlined /> 总花费</>}>
+                                <Tag icon={<DollarCircleOutlined />} color="blue">
+                                  {calculateTotalBudget(travelPlan.dailyPlan)}
+                                </Tag>
+                              </Descriptions.Item>
+                            </Descriptions>
 
-                          </div>
-                        </Card>
-                      ) : (
-                        <Card
-                          style={{
-                            background: 'linear-gradient(to right, #f0f5ff, #f9f0ff)',
-                            borderRadius: 8,
-                            flex: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <div style={{ 
-                            textAlign: 'center'
-                          }}>
-                            <Avatar 
-                              size={48} 
-                              icon={<RobotOutlined />} 
-                              style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
-                            />
-                            <Title level={5} style={{ marginTop: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
-                              等待生成详细行程
-                            </Title>
-                            <Text type="secondary" style={{ fontSize: '12px' }}>
-                              描述您的旅行需求，AI助手将为您生成详细的旅行行程
-                            </Text>
-                          </div>
-                        </Card>
-                      )}
-                    </div>
-                  </Col>
-                </Row>
+                            {(travelPlan.highlights && travelPlan.highlights.length > 0) && (
+                              <Card 
+                                title={<><StarOutlined style={{ color: '#faad14' }} /> 亮点推荐</>} 
+                                style={{ 
+                                  marginTop: 24,
+                                  background: 'linear-gradient(to right, #fffbe6, #ffffff)',
+                                  borderRadius: 8,
+                                  flex: 1
+                                }}
+                                headStyle={{ 
+                                  borderBottom: '1px solid #ffe58f',
+                                  padding: '0 12px'
+                                }}
+                              >
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                                  {travelPlan.highlights.map((highlight, index) => (
+                                    <Tag 
+                                      key={index}
+                                      icon={<StarOutlined />}
+                                      color="gold"
+                                      style={{
+                                        padding: '6px 12px',
+                                        fontSize: '14px',
+                                        borderRadius: 20
+                                      }}
+                                    >
+                                      {highlight}
+                                    </Tag>
+                                  ))}
+                                </div>
+                              </Card>
+                            )}
+                            
+                            <div style={{ marginTop: 24, textAlign: 'center' }}>
+                              <Button 
+                                type="primary" 
+                                icon={<SaveOutlined />}
+                                onClick={() => {
+                                  savePlanToDatabase(travelPlan);
+                                  message.success('旅行计划已保存！');
+                                }}
+                                style={{
+                                  borderRadius: 20,
+                                  padding: '6px 16px'
+                                }}
+                              >
+                                保存旅行计划
+                              </Button>
+                            </div>
+                          </Card>
+                        ) : (
+                          <Card
+                            style={{
+                              background: 'linear-gradient(to right, #f9f0ff, #f0f5ff)',
+                              borderRadius: 8,
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minHeight: '300px'
+                            }}
+                          >
+                            <div style={{ 
+                              textAlign: 'center'
+                            }}>
+                              <Avatar 
+                                size={48} 
+                                icon={<RobotOutlined />} 
+                                style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
+                              />
+                              <Title level={5} style={{ marginTop: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
+                                等待生成旅行计划
+                              </Title>
+                              <Text type="secondary" style={{ fontSize: '12px' }}>
+                                描述您的旅行需求，AI助手将为您生成个性化的旅行方案
+                              </Text>
+                            </div>
+                          </Card>
+                        )}
+                      </div>
+                    </Col>
+                    
+                    {/* 右侧详细行程区域 */}
+                    <Col span={12} style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        <Title level={4} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          gap: 8,
+                          margin: '0 0 24px 0'
+                        }}>
+                          <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
+                          详细行程
+                        </Title>
+                        
+                        {travelPlan ? (
+                          <Card 
+                            extra={
+                              <Tag 
+                                icon={<DollarCircleOutlined />} 
+                                color="blue" 
+                                style={{ 
+                                  fontSize: '16px', 
+                                  padding: '6px 12px',
+                                  borderRadius: 20
+                                }}
+                              >
+                                总花费: {calculateTotalBudget(travelPlan.dailyPlan)}
+                              </Tag>
+                            }
+                            style={{
+                              background: 'linear-gradient(to right, #f0f5ff, #f9f0ff)',
+                              borderRadius: 8,
+                              flex: 1,
+                              display: 'flex',
+                              flexDirection: 'column'
+                            }}
+                            bodyStyle={{ 
+                              flex: 1, 
+                              display: 'flex', 
+                              flexDirection: 'column',
+                              padding: '20px 0 0 0'
+                            }}
+                            headStyle={{
+                              borderBottom: '1px solid #e8e8e8'
+                            }}
+                          >
+                            <div style={{ flex: 1, overflow: 'auto' }}>
+                              <List
+                                itemLayout="vertical"
+                                dataSource={travelPlan.dailyPlan}
+                                renderItem={(item, index) => (
+                                  <List.Item style={{ alignItems: 'flex-start' }}>
+                                    <List.Item.Meta
+                                      description={
+                                        <div>
+                                          <Paragraph style={{ fontSize: '16px', marginBottom: 8 }}>
+                                            {typeof item === 'string' ? item : item.description}
+                                          </Paragraph>
+                                          {item.budget && (
+                                            <Tag 
+                                              icon={<DollarCircleOutlined />} 
+                                              color="success"
+                                              style={{
+                                                fontSize: '12px',
+                                                padding: '2px 8px'
+                                              }}
+                                            >
+                                              预算: {item.budget}
+                                            </Tag>
+                                          )}
+                                        </div>
+                                      }
+                                    />
+                                  </List.Item>
+                                )}
+                              />
+
+                            </div>
+                          </Card>
+                        ) : (
+                          <Card
+                            style={{
+                              background: 'linear-gradient(to right, #f0f5ff, #f9f0ff)',
+                              borderRadius: 8,
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minHeight: '300px'
+                            }}
+                          >
+                            <div style={{ 
+                              textAlign: 'center'
+                            }}>
+                              <Avatar 
+                                size={48} 
+                                icon={<RobotOutlined />} 
+                                style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
+                              />
+                              <Title level={5} style={{ marginTop: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
+                                等待生成详细行程
+                              </Title>
+                              <Text type="secondary" style={{ fontSize: '12px' }}>
+                                描述您的旅行需求，AI助手将为您生成详细的旅行行程
+                              </Text>
+                            </div>
+                          </Card>
+                        )}
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
               </Card>
             </div>
           </Col>
