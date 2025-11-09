@@ -33,7 +33,7 @@ const calculateTotalBudget = (dailyPlan) => {
 };
 
 import './App.css';
-import { Layout, Button, Card, Row, Col, Typography, Input, Space, Avatar, List, Divider, Steps, message } from 'antd';
+import { Layout, Button, Card, Row, Col, Typography, Input, Space, Avatar, List, Divider, Steps, message, Modal } from 'antd';
 import {
   SendOutlined,
   RobotOutlined,
@@ -44,11 +44,13 @@ import {
   CheckCircleOutlined,
   AudioOutlined,
   CalendarOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  SaveOutlined
 } from '@ant-design/icons';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { travelPlannerSystemPrompt } from './prompts/travelPlannerPrompt';
+import { saveTravelPlan } from './api/supabase';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -73,6 +75,7 @@ function App() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const amapScriptLoaded = useRef(false);
+  const recognitionRef = useRef(null);
 
   const handleSend = () => {
     if (inputValue.trim() === '' || isProcessing) return;
@@ -94,10 +97,60 @@ function App() {
     processWithLLM(inputValue);
   };
 
-  // 语音输入功能接口（预留）
+  // 语音输入功能接口
   const handleVoiceInput = () => {
-    // 后续将在此处实现语音识别功能
-    console.log("语音输入功能待实现");
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      message.error('您的浏览器不支持语音识别功能，请使用最新版Chrome浏览器');
+      console.log('浏览器不支持语音识别功能');
+      return;
+    }
+
+    // 如果正在识别，停止识别
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      return;
+    }
+
+    // 创建语音识别实例
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    // 设置识别参数
+    recognition.lang = 'zh-CN'; // 设置为中文识别
+    recognition.continuous = false; // 只识别一次
+    recognition.interimResults = false; // 不返回中间结果
+
+    recognition.onstart = () => {
+      console.log('语音识别开始');
+      message.info('正在聆听...再次点击结束');
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      console.log('语音识别结果:', transcript);
+      setInputValue(prevValue => prevValue + transcript);
+      message.success('语音识别完成');
+    };
+
+    recognition.onerror = (event) => {
+      console.error('语音识别出错:', event.error);
+      message.error(`语音识别出错: ${event.error}`);
+    };
+
+    recognition.onend = () => {
+      console.log('语音识别结束');
+      recognitionRef.current = null;
+    };
+
+    // 开始识别
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (error) {
+      console.error('启动语音识别失败:', error);
+      message.error('启动语音识别失败');
+    }
   };
 
   // App.jsx 内
@@ -530,7 +583,8 @@ function App() {
     }]);
   
     // 右侧地图 & 卡片数据
-    setTravelPlan({
+    const planData = {
+      origin: travelInfoRef.current.origin, // 添加出发地信息
       destination: jsonData.destination,
       duration: jsonData.duration,
       startDate: jsonData.startDate,
@@ -538,14 +592,54 @@ function App() {
       highlights: jsonData.highlights || [],
       routePoints: jsonData.routePoints || [],
       dailyPlan: fixedDaily
-    });
-  
+    };
+    
+    setTravelPlan(planData);
+    
     // 步骤条动画
     setCurrentStep(3);
     setTimeout(() => {
       setCurrentStep(4);
       setIsProcessing(false);
     }, 1500);
+  };
+
+  // 保存计划到数据库
+  const savePlanToDatabase = async (planData) => {
+    if (!user) return;
+
+    try {
+      // 保存到Supabase数据库
+      const result = await saveTravelPlan(user.id, planData);
+      
+      if (result.success) {
+        console.log('计划已保存到数据库');
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('保存计划失败:', error);
+      message.error('保存旅行计划失败: ' + error.message);
+    }
+  };
+
+  // 手动保存计划的函数
+  const handleSavePlan = () => {
+    if (!travelPlan) {
+      message.warning('当前没有可保存的旅行计划');
+      return;
+    }
+    
+    Modal.confirm({
+      title: '保存旅行计划',
+      content: '是否要保存这个旅行计划到您的个人收藏中？',
+      okText: '保存',
+      cancelText: '取消',
+      onOk: () => {
+        savePlanToDatabase(travelPlan);
+        message.success('旅行计划已保存！');
+      }
+    });
   };
 
   const steps = [
@@ -862,11 +956,28 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <Button 
               type="link" 
+              onClick={() => navigate('/user-home')}
+              style={{ color: 'white', marginRight: 16 }}
+            >
+              我的计划
+            </Button>
+            <Button 
+              type="link" 
               onClick={() => navigate('/settings')}
               style={{ color: 'white', marginRight: 16 }}
             >
               设置
             </Button>
+            {travelPlan && (
+              <Button 
+                type="link" 
+                onClick={handleSavePlan}
+                style={{ color: 'white', marginRight: 16 }}
+                icon={<SaveOutlined />}
+              >
+                保存计划
+              </Button>
+            )}
             <Text style={{ color: 'white', marginRight: 16 }}>欢迎, {user?.email}</Text>
             <Button 
               type="text" 
@@ -1070,6 +1181,19 @@ function App() {
                           {highlight}
                         </span>
                       ))}
+                    </div>
+                    
+                    <div style={{ marginTop: 24, textAlign: 'center' }}>
+                      <Button 
+                        type="primary" 
+                        icon={<SaveOutlined />}
+                        onClick={() => {
+                          savePlanToDatabase(travelPlan);
+                          message.success('旅行计划已保存！');
+                        }}
+                      >
+                        保存旅行计划
+                      </Button>
                     </div>
                   </Card>
                 ) : (

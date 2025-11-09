@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import Login from './Login.jsx'
 import Settings from './Settings.jsx'
+import UserHome from './UserHome.jsx'
+import PlanDetail from './PlanDetail.jsx'
 import { AuthProvider, useAuth } from './AuthContext.jsx'
 import './index.css'
 import { ConfigProvider } from 'antd'
@@ -33,12 +35,14 @@ const AppWrapper = () => {
 
   // 如果用户已登录且在登录页，则重定向到主页
   if (user && location.pathname === '/login') {
-    return <Navigate to="/" replace />
+    return <Navigate to="/user-home" replace />
   }
 
   return (
     <Routes>
       <Route path="/" element={<App />} />
+      <Route path="/user-home" element={<UserHome />} />
+      <Route path="/plan-detail" element={<PlanDetail />} />
       <Route path="/login" element={<Login />} />
       <Route path="/settings" element={<Settings />} />
     </Routes>

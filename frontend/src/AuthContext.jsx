@@ -1,7 +1,8 @@
-let ignoreNextAuthEvent = false;   // 注册时临时屏蔽
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+
+// 注册时临时屏蔽
+let ignoreNextAuthEvent = false;
 
 // 创建Supabase客户端
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -13,6 +14,9 @@ if (supabaseUrl && supabaseAnonKey) {
 } else {
   console.warn('Supabase URL and/or anon key not found. Auth features will be disabled.');
 }
+
+// 导出supabase客户端实例，避免重复创建
+export { supabase };
 
 // 创建认证上下文
 const AuthContext = createContext();

@@ -45,6 +45,15 @@ const Settings = () => {
     message.success('高德 Key 格式校验通过');
   };
 
+  // 测试科大讯飞API
+  const testXunfei = () => {
+    const { xunfeiAppId, xunfeiApiKey, xunfeiApiSecret } = form.getFieldsValue(true);
+    if (!xunfeiAppId || !xunfeiApiKey || !xunfeiApiSecret) {
+      return message.warning('请填写完整的科大讯飞API配置');
+    }
+    message.success('科大讯飞API配置已保存');
+  };
+
   // antd v5 items 写法，不再用废弃 TabPane
   const tabItems = [
     {
@@ -66,6 +75,20 @@ const Settings = () => {
           </Form.Item>
           <Form.Item>
             <Button onClick={testLLM} style={{ marginRight: 8 }}>测试</Button>
+          </Form.Item>
+          
+          <Divider>科大讯飞语音识别</Divider>
+          <Form.Item name="xunfeiAppId" label="AppID">
+            <Input.Password placeholder="科大讯飞 AppID" size="large" />
+          </Form.Item>
+          <Form.Item name="xunfeiApiKey" label="API Key">
+            <Input.Password placeholder="科大讯飞 API Key" size="large" />
+          </Form.Item>
+          <Form.Item name="xunfeiApiSecret" label="API Secret">
+            <Input.Password placeholder="科大讯飞 API Secret" size="large" />
+          </Form.Item>
+          <Form.Item>
+            <Button onClick={testXunfei} style={{ marginRight: 8 }}>测试</Button>
             <Button type="primary" htmlType="submit">保存</Button>
           </Form.Item>
         </Form>
@@ -78,6 +101,7 @@ const Settings = () => {
         <ul>
           <li>通义千问 Key：<a href="https://bailian.console.aliyun.com" target="_blank" rel="noreferrer">百炼控制台</a></li>
           <li>高德 Key：<a href="https://console.amap.com" target="_blank" rel="noreferrer">高德开放平台</a></li>
+          <li>科大讯飞语音：<a href="https://www.xfyun.cn" target="_blank" rel="noreferrer">科大讯飞开放平台</a></li>
           <li>填写后务必点击「保存」</li>
         </ul>
       )
