@@ -173,7 +173,7 @@ const UserHome = () => {
           alignItems: 'center', 
           marginBottom: 24 
         }}>
-          <Title level={4} style={{ margin: 0 }}>我的旅行计划</Title>
+          <Title level={4} style={{ margin: 0 }}> </Title>
           <Button 
             type="primary" 
             icon={<PlusOutlined />} 

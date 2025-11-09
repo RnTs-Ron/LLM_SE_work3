@@ -1001,384 +1001,385 @@ function App() {
       }}>
         <Row gutter={24} style={{ minHeight: 'calc(100vh - 64px - 48px)' }}>
           {/* 左侧内容区域 */}
-          <Col span={12}>
+          <Col span={24}>
             <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-              {/* 对话区域 */}
-              <div style={{ padding: '0 0 24px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <Title level={4} style={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  gap: 8
-                }}>
-                  <RobotOutlined />
-                  AI旅行助手
-                </Title>
-                
-                {/* 检查AI配置提示 */}
-                {!isProcessing && messages.length === 1 && (() => {
-                  const savedSettings = localStorage.getItem('travelPlannerSettings');
-                  let llmConfig = {};
-                  
-                  if (savedSettings) {
-                    try {
-                      llmConfig = JSON.parse(savedSettings);
-                    } catch (e) {
-                      console.error('解析设置时出错:', e);
-                    }
-                  }
-                  
-                  if (!llmConfig.llmApiKey) {
-                    return (
-                      <div style={{ 
-                        backgroundColor: '#fffbe6', 
-                        border: '1px solid #ffe58f', 
-                        borderRadius: 4, 
-                        padding: '12px 16px', 
-                        marginBottom: 16 
-                      }}>
-                        <Text>
-                          <span style={{ color: '#faad14', fontWeight: 'bold' }}>提示：</span>
-                          检测到您尚未配置通义千问API Key，当前使用模拟数据。请前往
-                          <Button 
-                            type="link" 
-                            onClick={() => navigate('/settings')} 
-                            style={{ padding: 0, height: 'auto' }}
-                          >
-                            设置页面
-                          </Button>
-                          配置通义千问服务以获得更好的体验。
-                        </Text>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-                
-                <div style={{ 
-                  height: '60vh', 
-                  minHeight: '500px',
-                  maxHeight: '700px',
-                  overflowY: 'auto', 
-                  marginBottom: '20px',
-                  background: '#fafafa',
-                  borderRadius: 6,
-                  padding: '16px',
-                  border: '1px solid #f0f0f0'
-                }}>
-                  <List
-                    dataSource={messages}
-                    renderItem={message => (
-                      <List.Item style={{ border: 'none', padding: '8px 0' }}>
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
-                          width: '100%'
-                        }}>
-                          <Avatar 
-                            style={{ 
-                              backgroundColor: message.sender === 'user' ? '#1890ff' : '#764ba2',
-                              flexShrink: 0
-                            }} 
-                            icon={message.sender === 'user' ? <UserOutlined /> : <RobotOutlined />}
-                          />
-                          <div style={{
-                            maxWidth: '80%',
-                            marginLeft: message.sender === 'user' ? 0 : '12px',
-                            marginRight: message.sender === 'user' ? '12px' : 0
+              {/* 对话区域和地图区域放在同一个容器中，左右并排 */}
+              <Card style={{ marginBottom: 24, height: 'calc(60vh + 240px)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', height: '100%' }}>
+                  {/* 左侧对话区域 */}
+                  <div style={{ padding: '0 0 24px 0', display: 'flex', flexDirection: 'column' }}>
+                    <Title level={4} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      gap: 8,
+                      margin: '0 0 24px 0'
+                    }}>
+                      <RobotOutlined />
+                      AI旅行助手
+                    </Title>
+                    
+                    {/* 检查AI配置提示 */}
+                    {!isProcessing && messages.length === 1 && (() => {
+                      const savedSettings = localStorage.getItem('travelPlannerSettings');
+                      let llmConfig = {};
+                      
+                      if (savedSettings) {
+                        try {
+                          llmConfig = JSON.parse(savedSettings);
+                        } catch (e) {
+                          console.error('解析设置时出错:', e);
+                        }
+                      }
+                      
+                      if (!llmConfig.llmApiKey) {
+                        return (
+                          <div style={{ 
+                            backgroundColor: '#fffbe6', 
+                            border: '1px solid #ffe58f', 
+                            borderRadius: 4, 
+                            padding: '12px 16px', 
+                            marginBottom: 16 
                           }}>
-                            <div style={{
-                              padding: '12px 16px',
-                              borderRadius: '18px',
-                              background: message.sender === 'user' ? '#1890ff' : '#f0f0f0',
-                              color: message.sender === 'user' ? '#fff' : '#000',
-                              marginLeft: message.sender === 'user' ? 'auto' : 0
-                            }}>
-                              <Text>{message.text}</Text>
-                            </div>
+                            <Text>
+                              <span style={{ color: '#faad14', fontWeight: 'bold' }}>提示：</span>
+                              检测到您尚未配置通义千问API Key，当前使用模拟数据。请前往
+                              <Button 
+                                type="link" 
+                                onClick={() => navigate('/settings')} 
+                                style={{ padding: 0, height: 'auto' }}
+                              >
+                                设置页面
+                              </Button>
+                              配置通义千问服务以获得更好的体验。
+                            </Text>
                           </div>
-                        </div>
-                      </List.Item>
-                    )}
-                  />
-                </div>
-                
-                <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                  <TextArea
-                    rows={4}
-                    placeholder="描述您的旅行需求，如：我和家人想去一个风景优美的地方度假，预算5000元，时间5天..."
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onPressEnter={handleSend}
-                    disabled={isProcessing}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Steps 
-                      current={currentStep} 
-                      items={steps.map(item => ({ ...item, key: item.title }))}
-                      size="small"
-                      style={{ flex: 1, marginRight: 16 }}
-                    />
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <Button 
-                        type="default" 
-                        icon={<AudioOutlined />} 
-                        onClick={handleVoiceInput}
-                        size="large"
+                        );
+                      }
+                      return null;
+                    })()}
+                    
+                    <div style={{ 
+                      height: '60vh', 
+                      minHeight: '500px',
+                      maxHeight: '700px',
+                      overflowY: 'auto', 
+                      marginBottom: '20px',
+                      background: '#fafafa',
+                      borderRadius: 6,
+                      padding: '16px',
+                      border: '1px solid #f0f0f0',
+                      flex: 1
+                    }}>
+                      <List
+                        dataSource={messages}
+                        renderItem={message => (
+                          <List.Item style={{ border: 'none', padding: '8px 0' }}>
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
+                              width: '100%'
+                            }}>
+                              <Avatar 
+                                style={{ 
+                                  backgroundColor: message.sender === 'user' ? '#1890ff' : '#764ba2',
+                                  flexShrink: 0
+                                }} 
+                                icon={message.sender === 'user' ? <UserOutlined /> : <RobotOutlined />}
+                              />
+                              <div style={{
+                                maxWidth: '80%',
+                                marginLeft: message.sender === 'user' ? 0 : '12px',
+                                marginRight: message.sender === 'user' ? '12px' : 0
+                              }}>
+                                <div style={{
+                                  padding: '12px 16px',
+                                  borderRadius: '18px',
+                                  background: message.sender === 'user' ? '#1890ff' : '#f0f0f0',
+                                  color: message.sender === 'user' ? '#fff' : '#000',
+                                  marginLeft: message.sender === 'user' ? 'auto' : 0
+                                }}>
+                                  <Text>{message.text}</Text>
+                                </div>
+                              </div>
+                            </div>
+                          </List.Item>
+                        )}
+                      />
+                    </div>
+                    
+                    <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                      <TextArea
+                        rows={4}
+                        placeholder="描述您的旅行需求，如：我和家人想去一个风景优美的地方度假，预算5000元，时间5天..."
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onPressEnter={handleSend}
                         disabled={isProcessing}
                       />
-                      <Button 
-                        type="primary" 
-                        icon={<SendOutlined />} 
-                        onClick={handleSend}
-                        size="large"
-                        loading={isProcessing}
-                      >
-                        发送
-                      </Button>
-                    </div>
-                  </div>
-                </Space>
-              </div>
-              
-              {/* 旅行规划结果 - 基本信息 */}
-              <div style={{ padding: '24px 0 0 0', flex: 1, overflow: 'auto' }}>
-                <Title level={4} style={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 24
-                }}>
-                  <CheckCircleOutlined />
-                  旅行规划结果 - 基本信息
-                </Title>
-                
-                {travelPlan ? (
-                  <Card title="基本信息">
-                    <List
-                      itemLayout="horizontal"
-                      dataSource={planInfoData}
-                      renderItem={item => (
-                        <List.Item>
-                          <List.Item.Meta
-                            avatar={<Avatar icon={item.icon} />}
-                            title={item.title}
-                            description={<Text strong>{item.value}</Text>}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Steps 
+                          current={currentStep} 
+                          items={steps.map(item => ({ ...item, key: item.title }))}
+                          size="small"
+                          style={{ flex: 1, marginRight: 16 }}
+                        />
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <Button 
+                            type="default" 
+                            icon={<AudioOutlined />} 
+                            onClick={handleVoiceInput}
+                            size="large"
+                            disabled={isProcessing}
                           />
-                        </List.Item>
+                          <Button 
+                            type="primary" 
+                            icon={<SendOutlined />} 
+                            onClick={handleSend}
+                            size="large"
+                            loading={isProcessing}
+                          >
+                            发送
+                          </Button>
+                        </div>
+                      </div>
+                    </Space>
+                  </div>
+                  
+                  {/* 右侧地图区域 */}
+                  <div style={{ padding: '0 0 24px 0', display: 'flex', flexDirection: 'column' }}>
+                    <Title level={4} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      gap: 8,
+                      margin: '0 0 24px 0'
+                    }}>
+                      <EnvironmentOutlined />
+                      地图视图
+                    </Title>
+                    
+                    {/* 地图容器 - 与对话区域等高 */}
+                    <div 
+                      ref={mapRef}
+                      style={{ 
+                        flex: 1,
+                        margin: '0 0 24px 0',
+                        borderRadius: 8,
+                        position: 'relative'
+                      }}
+                    >
+                      {/* 地图加载提示 */}
+                      {!window.AMap && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: '#f5f5f5',
+                          borderRadius: 8,
+                          zIndex: 1
+                        }}>
+                          <EnvironmentOutlined style={{ 
+                            fontSize: 48, 
+                            color: 'rgba(0,0,0,0.25)',
+                            marginBottom: 16
+                          }} />
+                          <Title level={4} style={{ color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
+                            地图区域
+                          </Title>
+                          <Text type="secondary">
+                            {(() => {
+                              const settings = localStorage.getItem('travelPlannerSettings');
+                              if (settings) {
+                                try {
+                                  const parsed = JSON.parse(settings);
+                                  if (parsed.amapApiKey) {
+                                    return '正在加载地图...';
+                                  }
+                                } catch (e) {
+                                  // 解析失败
+                                }
+                              }
+                              return '请在设置中配置高德地图API Key';
+                            })()}
+                          </Text>
+                        </div>
                       )}
-                    />
-                    
-                    <Divider orientation="left">亮点推荐</Divider>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {travelPlan.highlights.map((highlight, index) => (
-                        <span 
-                          key={index}
-                          style={{
-                            background: '#e6f7ff',
-                            border: '1px solid #91d5ff',
-                            borderRadius: 4,
-                            padding: '4px 8px',
-                            fontSize: '12px'
-                          }}
-                        >
-                          {highlight}
-                        </span>
-                      ))}
                     </div>
-                    
-                    <div style={{ marginTop: 24, textAlign: 'center' }}>
-                      <Button 
-                        type="primary" 
-                        icon={<SaveOutlined />}
-                        onClick={() => {
-                          savePlanToDatabase(travelPlan);
-                          message.success('旅行计划已保存！');
-                        }}
-                      >
-                        保存旅行计划
-                      </Button>
-                    </div>
-                  </Card>
-                ) : (
-                  <div style={{ 
-                    textAlign: 'center', 
-                    padding: '48px 0',
-                    background: '#fafafa',
-                    borderRadius: 6,
-                    border: '1px dashed #d9d9d9'
-                  }}>
-                    <Avatar 
-                      size={64} 
-                      icon={<RobotOutlined />} 
-                      style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
-                    />
-                    <Title level={4} style={{ marginTop: 16, color: 'rgba(0,0,0,0.45)' }}>
-                      等待生成旅行计划
-                    </Title>
-                    <Text type="secondary">
-                      描述您的旅行需求，AI助手将为您生成个性化的旅行方案
-                    </Text>
                   </div>
-                )}
-              </div>
-            </div>
-          </Col>
-          
-          {/* 右侧地图和详细行程区域 */}
-          <Col span={12}>
-            <div style={{ 
-              height: '100%', 
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <div style={{ 
-                padding: '24px 24px 0 24px' 
-              }}>
-                <Title level={4} style={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  gap: 8,
-                  margin: 0
-                }}>
-                  <EnvironmentOutlined />
-                  地图视图
-                </Title>
-                <Text type="secondary">旅行路线和景点将在地图上展示</Text>
-              </div>
+                </div>
+              </Card>
               
-              {/* 固定大小的地图区域 - 正方形，高度增加1倍 */}
-              <div 
-                ref={mapRef}
-                style={{ 
-                  width: '100%',
-                  aspectRatio: '1/1',
-                  margin: 24,
-                  borderRadius: 8,
-                  maxHeight: '800px',
-                  position: 'relative'
-                }}
-              >
-                {/* 地图加载提示 */}
-                {!window.AMap && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: 8,
-                    zIndex: 1
-                  }}>
-                    <EnvironmentOutlined style={{ 
-                      fontSize: 48, 
-                      color: 'rgba(0,0,0,0.25)',
-                      marginBottom: 16
-                    }} />
-                    <Title level={4} style={{ color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
-                      地图区域
-                    </Title>
-                    <Text type="secondary">
-                      {(() => {
-                        const settings = localStorage.getItem('travelPlannerSettings');
-                        if (settings) {
-                          try {
-                            const parsed = JSON.parse(settings);
-                            if (parsed.amapApiKey) {
-                              return '正在加载地图...';
-                            }
-                          } catch (e) {
-                            // 解析失败
-                          }
-                        }
-                        return '请在设置中配置高德地图API Key';
-                      })()}
-                    </Text>
-                  </div>
-                )}
-              </div>
-              
-              {/* 旅行规划结果 - 详细行程 */}
-              <div style={{ padding: '0 24px 24px 24px', flex: 1, overflow: 'auto' }}>
-                <Title level={4} style={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 24
-                }}>
-                  <CheckCircleOutlined />
-                  详细行程
-                </Title>
-                
-                {travelPlan ? (
-                  <Card title="详细行程" extra={
-                    <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                      总花费: {calculateTotalBudget(travelPlan.dailyPlan)}
-                    </div>
-                  }>
-                    <List
-                      itemLayout="vertical"
-                      dataSource={travelPlan.dailyPlan}
-                      renderItem={(item, index) => (
-                        <List.Item style={{ alignItems: 'flex-start' }}>
-                          <List.Item.Meta
-                            avatar={
-                              <Avatar 
-                                style={{ backgroundColor: '#1890ff' }}
+              {/* 旅行规划结果 - 基本信息和详细行程放在另一个容器中，左右并排 */}
+              <Card>
+                <Row gutter={24}>
+                  {/* 左侧基本信息区域 */}
+                  <Col span={12}>
+                    <div>
+                      <Title level={4} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 8,
+                        margin: '0 0 24px 0'
+                      }}>
+                        <CheckCircleOutlined />
+                        旅行规划结果 - 基本信息
+                      </Title>
+                      
+                      {travelPlan ? (
+                        <Card>
+                          <List
+                            itemLayout="horizontal"
+                            dataSource={planInfoData}
+                            renderItem={item => (
+                              <List.Item>
+                                <List.Item.Meta
+                                  avatar={<Avatar icon={item.icon} />}
+                                  title={item.title}
+                                  description={<Text strong>{item.value}</Text>}
+                                />
+                              </List.Item>
+                            )}
+                          />
+                          
+                          <Divider orientation="left">亮点推荐</Divider>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                            {travelPlan.highlights.map((highlight, index) => (
+                              <span 
+                                key={index}
+                                style={{
+                                  background: '#e6f7ff',
+                                  border: '1px solid #91d5ff',
+                                  borderRadius: 4,
+                                  padding: '4px 8px',
+                                  fontSize: '12px'
+                                }}
                               >
-                                第{index+1}天
-                              </Avatar>
-                            }
-                            description={
-                              <div>
-                                <Paragraph style={{ fontSize: '16px', marginBottom: 8 }}>
-                                  {typeof item === 'string' ? item : item.description}
-                                </Paragraph>
-                                {item.budget && (
-                                  <Paragraph style={{ 
-                                    fontSize: '14px', 
-                                    marginBottom: 0,
-                                    padding: '8px 12px',
-                                    backgroundColor: '#f6ffed',
-                                    border: '1px solid #b7eb8f',
-                                    borderRadius: 4
-                                  }}>
-                                    <strong>预算:</strong> {item.budget}
-                                  </Paragraph>
-                                )}
-                              </div>
-                            }
-                          />
-                        </List.Item>
+                                {highlight}
+                              </span>
+                            ))}
+                          </div>
+                          
+                          <div style={{ marginTop: 24, textAlign: 'center' }}>
+                            <Button 
+                              type="primary" 
+                              icon={<SaveOutlined />}
+                              onClick={() => {
+                                savePlanToDatabase(travelPlan);
+                                message.success('旅行计划已保存！');
+                              }}
+                            >
+                              保存旅行计划
+                            </Button>
+                          </div>
+                        </Card>
+                      ) : (
+                        <Card>
+                          <div style={{ 
+                            textAlign: 'center', 
+                            padding: '48px 0'
+                          }}>
+                            <Avatar 
+                              size={64} 
+                              icon={<RobotOutlined />} 
+                              style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
+                            />
+                            <Title level={4} style={{ marginTop: 16, color: 'rgba(0,0,0,0.45)' }}>
+                              等待生成旅行计划
+                            </Title>
+                            <Text type="secondary">
+                              描述您的旅行需求，AI助手将为您生成个性化的旅行方案
+                            </Text>
+                          </div>
+                        </Card>
                       )}
-                    />
-                  </Card>
-                ) : (
-                  <div style={{ 
-                    textAlign: 'center', 
-                    padding: '48px 0',
-                    background: '#fafafa',
-                    borderRadius: 6,
-                    border: '1px dashed #d9d9d9'
-                  }}>
-                    <Avatar 
-                      size={64} 
-                      icon={<RobotOutlined />} 
-                      style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
-                    />
-                    <Title level={4} style={{ marginTop: 16, color: 'rgba(0,0,0,0.45)' }}>
-                      等待生成详细行程
-                    </Title>
-                    <Text type="secondary">
-                      描述您的旅行需求，AI助手将为您生成详细的旅行行程
-                    </Text>
-                  </div>
-                )}
-              </div>
+                    </div>
+                  </Col>
+                  
+                  {/* 右侧详细行程区域 */}
+                  <Col span={12}>
+                    <div>
+                      <Title level={4} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 8,
+                        margin: '0 0 24px 0'
+                      }}>
+                        <CheckCircleOutlined />
+                        详细行程
+                      </Title>
+                      
+                      {travelPlan ? (
+                        <Card extra={
+                          <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                            总花费: {calculateTotalBudget(travelPlan.dailyPlan)}
+                          </div>
+                        }>
+                          <List
+                            itemLayout="vertical"
+                            dataSource={travelPlan.dailyPlan}
+                            renderItem={(item, index) => (
+                              <List.Item style={{ alignItems: 'flex-start' }}>
+                                <List.Item.Meta
+                                  avatar={
+                                    <Avatar 
+                                      style={{ backgroundColor: '#1890ff' }}
+                                    >
+                                      第{index+1}天
+                                    </Avatar>
+                                  }
+                                  description={
+                                    <div>
+                                      <Paragraph style={{ fontSize: '16px', marginBottom: 8 }}>
+                                        {typeof item === 'string' ? item : item.description}
+                                      </Paragraph>
+                                      {item.budget && (
+                                        <Paragraph style={{ 
+                                          fontSize: '14px', 
+                                          marginBottom: 0,
+                                          padding: '8px 12px',
+                                          backgroundColor: '#f6ffed',
+                                          border: '1px solid #b7eb8f',
+                                          borderRadius: 4
+                                        }}>
+                                          <strong>预算:</strong> {item.budget}
+                                        </Paragraph>
+                                      )}
+                                    </div>
+                                  }
+                                />
+                              </List.Item>
+                            )}
+                          />
+                        </Card>
+                      ) : (
+                        <Card>
+                          <div style={{ 
+                            textAlign: 'center', 
+                            padding: '48px 0'
+                          }}>
+                            <Avatar 
+                              size={64} 
+                              icon={<RobotOutlined />} 
+                              style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
+                            />
+                            <Title level={4} style={{ marginTop: 16, color: 'rgba(0,0,0,0.45)' }}>
+                              等待生成详细行程
+                            </Title>
+                            <Text type="secondary">
+                              描述您的旅行需求，AI助手将为您生成详细的旅行行程
+                            </Text>
+                          </div>
+                        </Card>
+                      )}
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
             </div>
           </Col>
         </Row>
