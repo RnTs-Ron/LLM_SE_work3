@@ -1057,7 +1057,7 @@ function App() {
       <Header style={{ 
         background: '#722ed1',
         padding: '0 5%',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.25)', // 增强阴影效果
         position: 'fixed',
         top: 0,
         left: 0,

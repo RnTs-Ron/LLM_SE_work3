@@ -179,9 +179,9 @@ const PlanDetail = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ 
-        background: 'linear-gradient(135deg, #722ed1 0%, #531dab 100%)',
+        background: '#722ed1',
         padding: '0 5%',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.15)'
+        boxShadow: '0 4px 12px rgba(0,0,0,0.25)', // 增强阴影效果
       }}>
         <div style={{ 
           display: 'flex', 
