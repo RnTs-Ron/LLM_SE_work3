@@ -129,15 +129,15 @@ function App() {
   // 语音输入功能接口
   const handleVoiceInput = () => {
     // 获取科大讯飞API配置
-    const xunfeiConfig = getXunfeiConfig();
+    // const xunfeiConfig = getXunfeiConfig();
 
     // 如果配置了科大讯飞API，则使用科大讯飞语音识别
-    if (xunfeiConfig) {
-      message.info('暂不支持科大讯飞语音识别');
-    } else {
+    // if (xunfeiConfig) {
+    //   message.info('暂不支持科大讯飞语音识别');
+    // } else {
       // 否则使用浏览器原生语音识别
       handleNativeVoiceInput();
-    }
+    // }
   };
 
   // 科大讯飞语音识别（已移除实现）
@@ -154,16 +154,25 @@ function App() {
       return;
     }
 
+    // 如果正在识别，停止识别
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+      return;
+    }
+
+    // 创建语音识别实例
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     
-    recognition.lang = 'zh-CN';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    // 设置识别参数
+    recognition.lang = 'zh-CN'; // 设置为中文识别
+    recognition.continuous = false; // 只识别一次
+    recognition.interimResults = false; // 不返回中间结果
 
     recognition.onstart = () => {
       console.log('语音识别开始');
-      message.info('正在聆听...');
+      message.info('正在聆听...再次点击结束');
     };
 
     recognition.onresult = (event) => {
@@ -183,6 +192,7 @@ function App() {
       recognitionRef.current = null;
     };
 
+    // 开始识别
     try {
       recognition.start();
       recognitionRef.current = recognition;
