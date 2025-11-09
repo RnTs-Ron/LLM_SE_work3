@@ -928,14 +928,16 @@ function App() {
   }, [travelPlan]);
 
   return (
-    <Layout style={{ 
-      minHeight: '100vh',
-      background: '#fff'
-    }}>
+    <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ 
         background: '#722ed1',
         padding: '0 5%',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000
       }}>
         <div style={{ 
           display: 'flex', 
@@ -992,11 +994,12 @@ function App() {
       </Header>
       
       <Content style={{ 
-        padding: '24px 5%', 
+        padding: '24px 5% 0', 
         background: '#fff',
-        minHeight: 'calc(100vh - 64px - 69px)'
+        minHeight: 'calc(100vh - 64px)',
+        marginTop: 64
       }}>
-        <Row gutter={24} style={{ minHeight: 'calc(100vh - 64px - 48px - 69px)' }}>
+        <Row gutter={24} style={{ minHeight: 'calc(100vh - 64px - 48px)' }}>
           {/* 左侧内容区域 */}
           <Col span={12}>
             <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column' }}>

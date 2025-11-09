@@ -118,7 +118,12 @@ const UserHome = () => {
       <Header style={{ 
         background: '#722ed1',
         padding: '0 5%',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000
       }}>
         <div style={{ 
           display: 'flex', 
@@ -159,7 +164,8 @@ const UserHome = () => {
       <Content style={{ 
         padding: '24px 5%', 
         background: '#fff',
-        minHeight: 'calc(100vh - 64px - 69px)'
+        minHeight: 'calc(100vh - 64px - 69px)',
+        marginTop: 64
       }}>
         <div style={{ 
           display: 'flex', 

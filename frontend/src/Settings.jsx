@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react';
-import { Card, Form, Input, Button, message, Typography, Divider, Tabs } from 'antd';
+import { Layout, Card, Form, Input, Button, message, Typography, Divider, Tabs } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { LogoutOutlined, HomeOutlined } from '@ant-design/icons';
 
+const { Header, Content } = Layout;
 const { Title } = Typography;
 
 const Settings = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   // 回填
   useEffect(() => {
@@ -52,6 +54,16 @@ const Settings = () => {
       return message.warning('请填写完整的科大讯飞API配置');
     }
     message.success('科大讯飞API配置已保存');
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      message.success('已退出登录');
+      navigate('/login');
+    } catch (error) {
+      message.error('退出登录失败');
+    }
   };
 
   // antd v5 items 写法，不再用废弃 TabPane
@@ -109,15 +121,66 @@ const Settings = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '50px 20px', minHeight: '100vh', background: '#f0f2f5' }}>
-      <Card style={{ width: '100%', maxWidth: 600 }}>
-        <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>系统设置</Title>
-        <Tabs items={tabItems} />
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <Button onClick={() => navigate('/')}>返回首页</Button>
+    <Layout style={{ minHeight: '100vh' }}>
+      <Header style={{ 
+        background: '#722ed1',
+        padding: '0 5%',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          height: '100%'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Title level={3} style={{ 
+              color: 'white', 
+              margin: 0,
+              fontWeight: 'bold'
+            }}>
+              系统设置
+            </Title>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Button 
+              type="link" 
+              onClick={() => navigate('/')}
+              style={{ color: 'white', marginRight: 16 }}
+            >
+              <HomeOutlined /> 主页
+            </Button>
+            <Button 
+              type="text" 
+              icon={<LogoutOutlined />} 
+              onClick={handleSignOut}
+              style={{ color: 'white' }}
+            >
+              退出
+            </Button>
+          </div>
         </div>
-      </Card>
-    </div>
+      </Header>
+      
+      <Content style={{ 
+        padding: '24px 5%', 
+        background: '#fff',
+        minHeight: 'calc(100vh - 64px)',
+        marginTop: 64
+      }}>
+        <Card style={{ width: '100%', maxWidth: 600, margin: '0 auto' }}>
+          <Tabs items={tabItems} />
+          <div style={{ textAlign: 'center', marginTop: 24 }}>
+            <Button onClick={() => navigate('/')}>返回首页</Button>
+          </div>
+        </Card>
+      </Content>
+    </Layout>
   );
 };
 

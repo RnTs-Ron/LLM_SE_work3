@@ -68,8 +68,11 @@ const Login = () => {
         background: '#722ed1',
         padding: '0 5%',
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        display: 'flex',
-        alignItems: 'center'
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000
       }}>
         <Title level={3} style={{ 
           color: 'white', 
@@ -84,7 +87,8 @@ const Login = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: '50px 0'
+        padding: '50px 0',
+        marginTop: 64
       }}>
         <Card style={{ width: 450, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
           <div style={{ textAlign: 'center', marginBottom: 30 }}>
