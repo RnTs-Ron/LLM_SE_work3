@@ -33,7 +33,7 @@ const calculateTotalBudget = (dailyPlan) => {
 };
 
 import './App.css';
-import { Layout, Button, Card, Row, Col, Typography, Input, Space, Avatar, List, Divider, Steps, message, Modal } from 'antd';
+import { Layout, Button, Card, Row, Col, Typography, Input, Space, Avatar, List, Divider, Steps, message, Modal, Badge, Tag, Descriptions, Timeline } from 'antd';
 import {
   SendOutlined,
   RobotOutlined,
@@ -45,12 +45,14 @@ import {
   AudioOutlined,
   CalendarOutlined,
   LogoutOutlined,
-  SaveOutlined
+  SaveOutlined,
+  StarOutlined
 } from '@ant-design/icons';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { travelPlannerSystemPrompt } from './prompts/travelPlannerPrompt';
 import { saveTravelPlan } from './api/supabase';
+import CryptoJS from 'crypto-js';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -76,6 +78,13 @@ function App() {
   const mapInstance = useRef(null);
   const amapScriptLoaded = useRef(false);
   const recognitionRef = useRef(null);
+  const xunfeiWebSocketRef = useRef(null);
+  // 语音识别状态管理
+  const recognitionStateRef = useRef({
+    isRecognizing: false,
+    startPos: -1,
+    lastResult: ''
+  });
 
   const handleSend = () => {
     if (inputValue.trim() === '' || isProcessing) return;
@@ -97,33 +106,64 @@ function App() {
     processWithLLM(inputValue);
   };
 
+  // 获取科大讯飞配置
+  const getXunfeiConfig = () => {
+    const raw = localStorage.getItem('travelPlannerSettings');
+    if (raw) {
+      try {
+        const settings = JSON.parse(raw);
+        if (settings.xunfeiAppId && settings.xunfeiApiKey && settings.xunfeiApiSecret) {
+          return {
+            appId: settings.xunfeiAppId,
+            apiKey: settings.xunfeiApiKey,
+            apiSecret: settings.xunfeiApiSecret
+          };
+        }
+      } catch (e) {
+        console.error('解析配置出错:', e);
+      }
+    }
+    return null;
+  };
+
   // 语音输入功能接口
   const handleVoiceInput = () => {
+    // 获取科大讯飞API配置
+    const xunfeiConfig = getXunfeiConfig();
+
+    // 如果配置了科大讯飞API，则使用科大讯飞语音识别
+    if (xunfeiConfig) {
+      message.info('暂不支持科大讯飞语音识别');
+    } else {
+      // 否则使用浏览器原生语音识别
+      handleNativeVoiceInput();
+    }
+  };
+
+  // 科大讯飞语音识别（已移除实现）
+  const handleXunfeiVoiceInput = (config) => {
+    message.info('暂不支持科大讯飞语音识别');
+    return;
+  };
+
+  // 浏览器原生语音识别
+  const handleNativeVoiceInput = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       message.error('您的浏览器不支持语音识别功能，请使用最新版Chrome浏览器');
       console.log('浏览器不支持语音识别功能');
       return;
     }
 
-    // 如果正在识别，停止识别
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-      return;
-    }
-
-    // 创建语音识别实例
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     
-    // 设置识别参数
-    recognition.lang = 'zh-CN'; // 设置为中文识别
-    recognition.continuous = false; // 只识别一次
-    recognition.interimResults = false; // 不返回中间结果
+    recognition.lang = 'zh-CN';
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
     recognition.onstart = () => {
       console.log('语音识别开始');
-      message.info('正在聆听...再次点击结束');
+      message.info('正在聆听...');
     };
 
     recognition.onresult = (event) => {
@@ -143,7 +183,6 @@ function App() {
       recognitionRef.current = null;
     };
 
-    // 开始识别
     try {
       recognition.start();
       recognitionRef.current = recognition;
@@ -158,6 +197,10 @@ function App() {
   const setPlanningLock = (value) => {
     planningLock = value;
   };
+  
+  // 声明变量用于存储识别状态（在原代码中这些变量已被定义，这里只是提醒）
+  // let result = '';
+  // let tempResult = '';
 
   // 用户旅行计划信息的状态管理 - 使用useRef保持持久性
   const travelInfoRef = useRef({
@@ -399,7 +442,7 @@ function App() {
       }]);
       setIsProcessing(false);
       // 出错时清空信息，防止下一轮污染
-      travelInfoRef.current = { origin: null, destination: null, days: null, budget: null, people: null };
+      travelInfoRef.current = { origin: null, destination: null, days: null, budget: null };
     } finally {
       setPlanningLock(false);
     }
@@ -1059,90 +1102,99 @@ function App() {
                     })()}
                     
                     <div style={{ 
-                      height: '60vh', 
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
                       minHeight: '500px',
                       maxHeight: '700px',
-                      overflowY: 'auto', 
-                      marginBottom: '20px',
-                      background: '#fafafa',
-                      borderRadius: 6,
-                      padding: '16px',
-                      border: '1px solid #f0f0f0',
-                      flex: 1
+                      overflow: 'hidden'
                     }}>
-                      <List
-                        dataSource={messages}
-                        renderItem={message => (
-                          <List.Item style={{ border: 'none', padding: '8px 0' }}>
-                            <div style={{
-                              display: 'flex',
-                              flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
-                              width: '100%'
-                            }}>
-                              <Avatar 
-                                style={{ 
-                                  backgroundColor: message.sender === 'user' ? '#1890ff' : '#764ba2',
-                                  flexShrink: 0
-                                }} 
-                                icon={message.sender === 'user' ? <UserOutlined /> : <RobotOutlined />}
-                              />
+                      <div style={{ 
+                        height: '60vh', 
+                        minHeight: '500px',
+                        maxHeight: '700px',
+                        overflowY: 'auto', 
+                        marginBottom: '20px',
+                        background: '#fafafa',
+                        borderRadius: 6,
+                        padding: '16px',
+                        border: '1px solid #f0f0f0',
+                        flex: 1
+                      }}>
+                        <List
+                          dataSource={messages}
+                          renderItem={message => (
+                            <List.Item style={{ border: 'none', padding: '8px 0' }}>
                               <div style={{
-                                maxWidth: '80%',
-                                marginLeft: message.sender === 'user' ? 0 : '12px',
-                                marginRight: message.sender === 'user' ? '12px' : 0
+                                display: 'flex',
+                                flexDirection: message.sender === 'user' ? 'row-reverse' : 'row',
+                                width: '100%'
                               }}>
+                                <Avatar 
+                                  style={{ 
+                                    backgroundColor: message.sender === 'user' ? '#1890ff' : '#764ba2',
+                                    flexShrink: 0
+                                  }} 
+                                  icon={message.sender === 'user' ? <UserOutlined /> : <RobotOutlined />}
+                                />
                                 <div style={{
-                                  padding: '12px 16px',
-                                  borderRadius: '18px',
-                                  background: message.sender === 'user' ? '#1890ff' : '#f0f0f0',
-                                  color: message.sender === 'user' ? '#fff' : '#000',
-                                  marginLeft: message.sender === 'user' ? 'auto' : 0
+                                  maxWidth: '80%',
+                                  marginLeft: message.sender === 'user' ? 0 : '12px',
+                                  marginRight: message.sender === 'user' ? '12px' : 0
                                 }}>
-                                  <Text>{message.text}</Text>
+                                  <div style={{
+                                    padding: '12px 16px',
+                                    borderRadius: '18px',
+                                    background: message.sender === 'user' ? '#1890ff' : '#f0f0f0',
+                                    color: message.sender === 'user' ? '#fff' : '#000',
+                                    marginLeft: message.sender === 'user' ? 'auto' : 0
+                                  }}>
+                                    <Text>{message.text}</Text>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </List.Item>
-                        )}
-                      />
-                    </div>
-                    
-                    <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                      <TextArea
-                        rows={4}
-                        placeholder="描述您的旅行需求，如：我和家人想去一个风景优美的地方度假，预算5000元，时间5天..."
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onPressEnter={handleSend}
-                        disabled={isProcessing}
-                      />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Steps 
-                          current={currentStep} 
-                          items={steps.map(item => ({ ...item, key: item.title }))}
-                          size="small"
-                          style={{ flex: 1, marginRight: 16 }}
+                            </List.Item>
+                          )}
                         />
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <Button 
-                            type="default" 
-                            icon={<AudioOutlined />} 
-                            onClick={handleVoiceInput}
-                            size="large"
-                            disabled={isProcessing}
-                          />
-                          <Button 
-                            type="primary" 
-                            icon={<SendOutlined />} 
-                            onClick={handleSend}
-                            size="large"
-                            loading={isProcessing}
-                          >
-                            发送
-                          </Button>
-                        </div>
                       </div>
-                    </Space>
+                      
+                      <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                        <TextArea
+                          rows={4}
+                          placeholder="描述您的旅行需求，如：我们准备从北京出发去上海旅游6天，预算1万2千元，2个人。"
+                          value={inputValue}
+                          onChange={(e) => setInputValue(e.target.value)}
+                          onPressEnter={handleSend}
+                          disabled={isProcessing}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Steps 
+                            current={currentStep} 
+                            items={steps.map(item => ({ ...item, key: item.title }))}
+                            size="small"
+                            style={{ flex: 1, marginRight: 16 }}
+                          />
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <Button 
+                              type="default" 
+                              icon={<AudioOutlined />} 
+                              onClick={handleVoiceInput}
+                              size="large"
+                              disabled={isProcessing}
+                            />
+                            <Button 
+                              type="primary" 
+                              icon={<SendOutlined />} 
+                              onClick={handleSend}
+                              size="large"
+                              loading={isProcessing}
+                            >
+                              发送
+                            </Button>
+                          </div>
+                        </div>
+                      </Space>
+                    </div>
                   </div>
                   
                   {/* 右侧地图区域 */}
@@ -1215,54 +1267,109 @@ function App() {
               </Card>
               
               {/* 旅行规划结果 - 基本信息和详细行程放在另一个容器中，左右并排 */}
-              <Card>
-                <Row gutter={24}>
+              <Card 
+                style={{ 
+                  borderRadius: 12,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                }}
+              >
+                <Row gutter={24} style={{ minHeight: '500px' }}>
                   {/* 左侧基本信息区域 */}
-                  <Col span={12}>
-                    <div>
+                  <Col span={12} style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <Title level={4} style={{ 
                         display: 'flex', 
                         alignItems: 'center',
                         gap: 8,
                         margin: '0 0 24px 0'
                       }}>
-                        <CheckCircleOutlined />
+                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
                         旅行规划结果 - 基本信息
                       </Title>
                       
                       {travelPlan ? (
-                        <Card>
-                          <List
-                            itemLayout="horizontal"
-                            dataSource={planInfoData}
-                            renderItem={item => (
-                              <List.Item>
-                                <List.Item.Meta
-                                  avatar={<Avatar icon={item.icon} />}
-                                  title={item.title}
-                                  description={<Text strong>{item.value}</Text>}
-                                />
-                              </List.Item>
+                        <Card
+                          style={{
+                            background: 'linear-gradient(to right, #f9f0ff, #f0f5ff)',
+                            borderRadius: 8,
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column'
+                          }}
+                          bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+                        >
+                          <Descriptions 
+                            column={1} 
+                            bordered
+                            size="middle"
+                            labelStyle={{
+                              fontWeight: 'bold',
+                              backgroundColor: '#fafafa'
+                            }}
+                            style={{ flex: 1 }}
+                          >
+                            {travelPlan.origin && (
+                              <Descriptions.Item label={<><EnvironmentOutlined /> 出发地</>}>
+                                <Text strong style={{ fontSize: '16px' }}>{travelPlan.origin}</Text>
+                              </Descriptions.Item>
                             )}
-                          />
-                          
-                          <Divider orientation="left">亮点推荐</Divider>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                            {travelPlan.highlights.map((highlight, index) => (
-                              <span 
-                                key={index}
-                                style={{
-                                  background: '#e6f7ff',
-                                  border: '1px solid #91d5ff',
-                                  borderRadius: 4,
-                                  padding: '4px 8px',
-                                  fontSize: '12px'
-                                }}
-                              >
-                                {highlight}
-                              </span>
-                            ))}
-                          </div>
+                            <Descriptions.Item label={<><EnvironmentOutlined /> 目的地</>}>
+                              <Text strong style={{ fontSize: '16px' }}>{travelPlan.destination}</Text>
+                            </Descriptions.Item>
+                            <Descriptions.Item label={<><ClockCircleOutlined /> 行程时长</>}>
+                              <Badge 
+                                count={travelPlan.duration} 
+                                style={{ backgroundColor: '#722ed1' }} 
+                                overflowCount={99}
+                              />
+                            </Descriptions.Item>
+                            <Descriptions.Item label={<><CalendarOutlined /> 出发日期</>}>
+                              <Text strong>{travelPlan.startDate}</Text>
+                            </Descriptions.Item>
+                            <Descriptions.Item label={<><DollarCircleOutlined /> 预算</>}>
+                              <Tag icon={<DollarCircleOutlined />} color="green">
+                                {travelPlan.budget}
+                              </Tag>
+                            </Descriptions.Item>
+                            <Descriptions.Item label={<><DollarCircleOutlined /> 总花费</>}>
+                              <Tag icon={<DollarCircleOutlined />} color="blue">
+                                {calculateTotalBudget(travelPlan.dailyPlan)}
+                              </Tag>
+                            </Descriptions.Item>
+                          </Descriptions>
+
+                          {(travelPlan.highlights && travelPlan.highlights.length > 0) && (
+                            <Card 
+                              title={<><StarOutlined style={{ color: '#faad14' }} /> 亮点推荐</>} 
+                              style={{ 
+                                marginTop: 24,
+                                background: 'linear-gradient(to right, #fffbe6, #ffffff)',
+                                borderRadius: 8,
+                                flex: 1
+                              }}
+                              headStyle={{ 
+                                borderBottom: '1px solid #ffe58f',
+                                padding: '0 12px'
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                                {travelPlan.highlights.map((highlight, index) => (
+                                  <Tag 
+                                    key={index}
+                                    icon={<StarOutlined />}
+                                    color="gold"
+                                    style={{
+                                      padding: '6px 12px',
+                                      fontSize: '14px',
+                                      borderRadius: 20
+                                    }}
+                                  >
+                                    {highlight}
+                                  </Tag>
+                                ))}
+                              </div>
+                            </Card>
+                          )}
                           
                           <div style={{ marginTop: 24, textAlign: 'center' }}>
                             <Button 
@@ -1272,26 +1379,38 @@ function App() {
                                 savePlanToDatabase(travelPlan);
                                 message.success('旅行计划已保存！');
                               }}
+                              style={{
+                                borderRadius: 20,
+                                padding: '6px 16px'
+                              }}
                             >
                               保存旅行计划
                             </Button>
                           </div>
                         </Card>
                       ) : (
-                        <Card>
+                        <Card
+                          style={{
+                            background: 'linear-gradient(to right, #f9f0ff, #f0f5ff)',
+                            borderRadius: 8,
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
                           <div style={{ 
-                            textAlign: 'center', 
-                            padding: '48px 0'
+                            textAlign: 'center'
                           }}>
                             <Avatar 
-                              size={64} 
+                              size={48} 
                               icon={<RobotOutlined />} 
                               style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
                             />
-                            <Title level={4} style={{ marginTop: 16, color: 'rgba(0,0,0,0.45)' }}>
+                            <Title level={5} style={{ marginTop: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
                               等待生成旅行计划
                             </Title>
-                            <Text type="secondary">
+                            <Text type="secondary" style={{ fontSize: '12px' }}>
                               描述您的旅行需求，AI助手将为您生成个性化的旅行方案
                             </Text>
                           </div>
@@ -1301,76 +1420,106 @@ function App() {
                   </Col>
                   
                   {/* 右侧详细行程区域 */}
-                  <Col span={12}>
-                    <div>
+                  <Col span={12} style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <Title level={4} style={{ 
                         display: 'flex', 
                         alignItems: 'center',
                         gap: 8,
                         margin: '0 0 24px 0'
                       }}>
-                        <CheckCircleOutlined />
+                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
                         详细行程
                       </Title>
                       
                       {travelPlan ? (
-                        <Card extra={
-                          <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                            总花费: {calculateTotalBudget(travelPlan.dailyPlan)}
-                          </div>
-                        }>
-                          <List
-                            itemLayout="vertical"
-                            dataSource={travelPlan.dailyPlan}
-                            renderItem={(item, index) => (
-                              <List.Item style={{ alignItems: 'flex-start' }}>
-                                <List.Item.Meta
-                                  avatar={
-                                    <Avatar 
-                                      style={{ backgroundColor: '#1890ff' }}
-                                    >
-                                      第{index+1}天
-                                    </Avatar>
-                                  }
-                                  description={
-                                    <div>
-                                      <Paragraph style={{ fontSize: '16px', marginBottom: 8 }}>
-                                        {typeof item === 'string' ? item : item.description}
-                                      </Paragraph>
-                                      {item.budget && (
-                                        <Paragraph style={{ 
-                                          fontSize: '14px', 
-                                          marginBottom: 0,
-                                          padding: '8px 12px',
-                                          backgroundColor: '#f6ffed',
-                                          border: '1px solid #b7eb8f',
-                                          borderRadius: 4
-                                        }}>
-                                          <strong>预算:</strong> {item.budget}
+                        <Card 
+                          extra={
+                            <Tag 
+                              icon={<DollarCircleOutlined />} 
+                              color="blue" 
+                              style={{ 
+                                fontSize: '16px', 
+                                padding: '6px 12px',
+                                borderRadius: 20
+                              }}
+                            >
+                              总花费: {calculateTotalBudget(travelPlan.dailyPlan)}
+                            </Tag>
+                          }
+                          style={{
+                            background: 'linear-gradient(to right, #f0f5ff, #f9f0ff)',
+                            borderRadius: 8,
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column'
+                          }}
+                          bodyStyle={{ 
+                            flex: 1, 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            padding: '20px 0 0 0'
+                          }}
+                          headStyle={{
+                            borderBottom: '1px solid #e8e8e8'
+                          }}
+                        >
+                          <div style={{ flex: 1, overflow: 'auto' }}>
+                            <List
+                              itemLayout="vertical"
+                              dataSource={travelPlan.dailyPlan}
+                              renderItem={(item, index) => (
+                                <List.Item style={{ alignItems: 'flex-start' }}>
+                                  <List.Item.Meta
+                                    description={
+                                      <div>
+                                        <Paragraph style={{ fontSize: '16px', marginBottom: 8 }}>
+                                          {typeof item === 'string' ? item : item.description}
                                         </Paragraph>
-                                      )}
-                                    </div>
-                                  }
-                                />
-                              </List.Item>
-                            )}
-                          />
+                                        {item.budget && (
+                                          <Tag 
+                                            icon={<DollarCircleOutlined />} 
+                                            color="success"
+                                            style={{
+                                              fontSize: '12px',
+                                              padding: '2px 8px'
+                                            }}
+                                          >
+                                            预算: {item.budget}
+                                          </Tag>
+                                        )}
+                                      </div>
+                                    }
+                                  />
+                                </List.Item>
+                              )}
+                            />
+
+                          </div>
                         </Card>
                       ) : (
-                        <Card>
+                        <Card
+                          style={{
+                            background: 'linear-gradient(to right, #f0f5ff, #f9f0ff)',
+                            borderRadius: 8,
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
                           <div style={{ 
-                            textAlign: 'center', 
-                            padding: '48px 0'
+                            textAlign: 'center'
                           }}>
                             <Avatar 
-                              size={64} 
+                              size={48} 
                               icon={<RobotOutlined />} 
                               style={{ backgroundColor: '#f0f2f5', color: 'rgba(0,0,0,0.45)' }} 
                             />
-                            <Title level={4} style={{ marginTop: 16, color: 'rgba(0,0,0,0.45)' }}>
+                            <Title level={5} style={{ marginTop: 12, color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
                               等待生成详细行程
                             </Title>
-                            <Text type="secondary">
+                            <Text type="secondary" style={{ fontSize: '12px' }}>
                               描述您的旅行需求，AI助手将为您生成详细的旅行行程
                             </Text>
                           </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layout, Card, List, Typography, Button, message, Avatar, Popconfirm } from 'antd';
+import { Layout, Card, List, Typography, Button, message, Avatar, Popconfirm, Tag, Descriptions, Badge, Space } from 'antd';
 import { 
   EnvironmentOutlined, 
   ClockCircleOutlined, 
@@ -8,7 +8,12 @@ import {
   DollarCircleOutlined,
   CheckCircleOutlined,
   ArrowLeftOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  StarOutlined,
+  CarOutlined,
+  HomeOutlined,
+  ShoppingOutlined,
+  TeamOutlined
 } from '@ant-design/icons';
 import { deleteTravelPlan } from './api/supabase';
 
@@ -83,21 +88,100 @@ const PlanDetail = () => {
 
   // 旅行计划基本信息数据
   const planInfoData = [
-    { icon: <EnvironmentOutlined />, title: '路线', value: plan.origin ? `${plan.origin} → ${plan.destination}` : plan.destination },
-    { icon: <ClockCircleOutlined />, title: '行程时长', value: plan.duration },
-    { icon: <CalendarOutlined />, title: '出发日期', value: plan.start_date || plan.startDate },
-    { icon: <DollarCircleOutlined />, title: '预算', value: plan.budget },
-    { icon: <DollarCircleOutlined />, title: '总花费', value: calculateTotalBudget(plan.daily_plan || plan.dailyPlan) }
+    { icon: <EnvironmentOutlined style={{ fontSize: '20px' }} />, title: '路线', value: plan.origin ? `${plan.origin} → ${plan.destination}` : plan.destination },
+    { icon: <ClockCircleOutlined style={{ fontSize: '20px' }} />, title: '行程时长', value: plan.duration },
+    { icon: <CalendarOutlined style={{ fontSize: '20px' }} />, title: '出发日期', value: plan.start_date || plan.startDate },
+    { icon: <DollarCircleOutlined style={{ fontSize: '20px' }} />, title: '预算', value: plan.budget },
+    { icon: <DollarCircleOutlined style={{ fontSize: '20px' }} />, title: '总花费', value: calculateTotalBudget(plan.daily_plan || plan.dailyPlan) }
   ];
 
   const dailyPlan = plan.daily_plan || plan.dailyPlan;
 
+  // 解析预算信息
+  const parseBudgetInfo = (budgetText) => {
+    if (!budgetText) return [];
+    
+    const budgetItems = [];
+    
+    // 住宿
+    const zhuMatch = budgetText.match(/住宿:\s*¥(\d+)/);
+    if (zhuMatch) {
+      budgetItems.push({
+        icon: <HomeOutlined />,
+        label: '住宿',
+        value: `¥${zhuMatch[1]}`
+      });
+    }
+    
+    // 餐饮
+    const canMatch = budgetText.match(/餐饮:\s*¥(\d+)/);
+    if (canMatch) {
+      budgetItems.push({
+        icon: <TeamOutlined />,
+        label: '餐饮',
+        value: `¥${canMatch[1]}`
+      });
+    }
+    
+    // 交通
+    const jiaoMatch = budgetText.match(/交通:\s*¥(\d+)/);
+    if (jiaoMatch) {
+      budgetItems.push({
+        icon: <CarOutlined />,
+        label: '交通',
+        value: `¥${jiaoMatch[1]}`
+      });
+    }
+    
+    // 门票
+    const menMatch = budgetText.match(/门票:\s*¥(\d+)/);
+    if (menMatch) {
+      budgetItems.push({
+        icon: <StarOutlined />,
+        label: '门票',
+        value: `¥${menMatch[1]}`
+      });
+    }
+    
+    // 购物
+    const shoppingMatch = budgetText.match(/购物:\s*¥(\d+)/);
+    if (shoppingMatch) {
+      budgetItems.push({
+        icon: <ShoppingOutlined />,
+        label: '购物',
+        value: `¥${shoppingMatch[1]}`
+      });
+    }
+    
+    // 娱乐
+    const entertainmentMatch = budgetText.match(/娱乐:\s*¥(\d+)/);
+    if (entertainmentMatch) {
+      budgetItems.push({
+        icon: <StarOutlined />,
+        label: '娱乐',
+        value: `¥${entertainmentMatch[1]}`
+      });
+    }
+    
+    // 大交通
+    const bigTrafficMatch = budgetText.match(/往返大交通:\s*¥(\d+)/);
+    if (bigTrafficMatch) {
+      budgetItems.push({
+        icon: <CarOutlined />,
+        label: '往返大交通',
+        value: `¥${bigTrafficMatch[1]}`
+      });
+    }
+    
+    return budgetItems;
+  };
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ 
-        background: '#722ed1',
+        background: 'linear-gradient(135deg, #722ed1 0%, #531dab 100%)',
         padding: '0 5%',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        boxShadow: '0 2px 12px rgba(0,0,0,0.15)'
       }}>
         <div style={{ 
           display: 'flex', 
@@ -109,8 +193,10 @@ const PlanDetail = () => {
             <Title level={3} style={{ 
               color: 'white', 
               margin: 0,
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              textShadow: '0 2px 4px rgba(0,0,0,0.2)'
             }}>
+              <EnvironmentOutlined style={{ marginRight: 12 }} />
               旅行计划详情
             </Title>
           </div>
@@ -139,92 +225,200 @@ const PlanDetail = () => {
       </Header>
       
       <Content style={{ 
-        padding: '24px 5%', 
-        background: '#fff',
+        padding: '0', 
+        background: 'linear-gradient(to bottom, #f0f2f5, #ffffff)',
         minHeight: 'calc(100vh - 64px - 69px)'
       }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <Card title="基本信息" style={{ marginBottom: 24 }}>
-            <List
-              itemLayout="horizontal"
-              dataSource={planInfoData}
-              renderItem={item => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<Avatar icon={item.icon} />}
-                    title={item.title}
-                    description={<Text strong>{item.value}</Text>}
-                  />
-                </List.Item>
-              )}
-            />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 5%' }}>
+          <Card 
+            title={
+              <Space>
+                <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
+                <span>基本信息</span>
+              </Space>
+            } 
+            style={{ 
+              marginBottom: 24,
+              borderRadius: 12,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+            }}
+            headStyle={{
+              background: 'linear-gradient(to right, #f9f0ff, #f0f5ff)',
+              borderBottom: '1px solid #e8e8e8',
+              borderRadius: '12px 12px 0 0'
+            }}
+          >
+            <Descriptions 
+              column={{ xs: 1, sm: 2, md: 3 }} 
+              bordered
+              size="middle"
+              labelStyle={{
+                fontWeight: 'bold',
+                backgroundColor: '#fafafa'
+              }}
+            >
+              <Descriptions.Item label={<><EnvironmentOutlined /> 路线</>}>
+                <Text strong style={{ fontSize: '16px' }}>
+                  {plan.origin ? `${plan.origin} → ${plan.destination}` : plan.destination}
+                </Text>
+              </Descriptions.Item>
+              <Descriptions.Item label={<><ClockCircleOutlined /> 行程时长</>}>
+                <Badge 
+                  count={plan.duration} 
+                  style={{ backgroundColor: '#722ed1' }} 
+                  overflowCount={99}
+                />
+              </Descriptions.Item>
+              <Descriptions.Item label={<><CalendarOutlined /> 出发日期</>}>
+                <Text strong>{plan.start_date || plan.startDate}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label={<><DollarCircleOutlined /> 预算</>}>
+                <Tag icon={<DollarCircleOutlined />} color="green">
+                  {plan.budget}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label={<><DollarCircleOutlined /> 总花费</>}>
+                <Tag icon={<DollarCircleOutlined />} color="blue">
+                  {calculateTotalBudget(plan.daily_plan || plan.dailyPlan)}
+                </Tag>
+              </Descriptions.Item>
+            </Descriptions>
             
             {(plan.highlights || plan.highlights?.length > 0) && (
-              <>
-                <div style={{ margin: '16px 0' }}><Text strong>亮点推荐</Text></div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <Card 
+                title={<><StarOutlined style={{ color: '#faad14' }} /> 亮点推荐</>} 
+                style={{ 
+                  marginTop: 24,
+                  background: 'linear-gradient(to right, #fffbe6, #ffffff)',
+                  borderRadius: 8
+                }}
+                headStyle={{ 
+                  borderBottom: '1px solid #ffe58f',
+                  padding: '0 12px'
+                }}
+              >
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                   {(plan.highlights || []).map((highlight, index) => (
-                    <span 
+                    <Tag 
                       key={index}
+                      icon={<StarOutlined />}
+                      color="gold"
                       style={{
-                        background: '#e6f7ff',
-                        border: '1px solid #91d5ff',
-                        borderRadius: 4,
-                        padding: '4px 8px',
-                        fontSize: '12px'
+                        padding: '6px 12px',
+                        fontSize: '14px',
+                        borderRadius: 20
                       }}
                     >
                       {highlight}
-                    </span>
+                    </Tag>
                   ))}
                 </div>
-              </>
+              </Card>
             )}
           </Card>
 
           <Card 
-            title="详细行程" 
+            title={
+              <Space>
+                <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
+                <span>详细行程</span>
+              </Space>
+            } 
             extra={
-              <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
+              <Tag 
+                icon={<DollarCircleOutlined />} 
+                color="blue" 
+                style={{ 
+                  fontSize: '16px', 
+                  padding: '6px 12px',
+                  borderRadius: 20
+                }}
+              >
                 总花费: {calculateTotalBudget(dailyPlan)}
-              </div>
+              </Tag>
             }
+            style={{ 
+              borderRadius: 12,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+            }}
+            headStyle={{
+              background: 'linear-gradient(to right, #f0f5ff, #f9f0ff)',
+              borderBottom: '1px solid #e8e8e8',
+              borderRadius: '12px 12px 0 0'
+            }}
           >
             <List
               itemLayout="vertical"
               dataSource={dailyPlan}
-              renderItem={(item, index) => (
-                <List.Item style={{ alignItems: 'flex-start' }}>
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar 
-                        style={{ backgroundColor: '#1890ff' }}
-                      >
-                        第{index+1}天
-                      </Avatar>
-                    }
-                    description={
-                      <div>
-                        <Paragraph style={{ fontSize: '16px', marginBottom: 8 }}>
-                          {typeof item === 'string' ? item : (item.description || item)}
-                        </Paragraph>
-                        {(item.budget || item.daily_plan) && (
-                          <Paragraph style={{ 
-                            fontSize: '14px', 
-                            marginBottom: 0,
-                            padding: '8px 12px',
-                            backgroundColor: '#f6ffed',
-                            border: '1px solid #b7eb8f',
-                            borderRadius: 4
-                          }}>
-                            <strong>预算:</strong> {item.budget || item.daily_plan}
-                          </Paragraph>
-                        )}
-                      </div>
-                    }
-                  />
-                </List.Item>
-              )}
+              renderItem={(item, index) => {
+                const budgetItems = parseBudgetInfo(item.budget || item.daily_plan);
+                return (
+                  <List.Item 
+                    style={{ 
+                      alignItems: 'flex-start',
+                      padding: '24px 0',
+                      borderBottom: '1px dashed #e8e8e8'
+                    }}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar 
+                          style={{ 
+                            backgroundColor: '#1890ff',
+                            width: 50,
+                            height: 50,
+                            lineHeight: '50px',
+                            fontSize: '18px',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          第{index+1}天
+                        </Avatar>
+                      }
+                      title={
+                        <Title level={4} style={{ margin: '8px 0' }}>
+                          {typeof item === 'string' ? `第${index+1}天行程` : (item.description || item)}
+                        </Title>
+                      }
+                      description={
+                        <div>
+                          {budgetItems.length > 0 && (
+                            <Card 
+                              title={<><DollarCircleOutlined style={{ color: '#52c41a' }} /> 预算明细</>} 
+                              size="small"
+                              style={{ 
+                                background: 'linear-gradient(to right, #f6ffed, #ffffff)',
+                                borderRadius: 8
+                              }}
+                              headStyle={{ 
+                                borderBottom: '1px solid #b7eb8f',
+                                padding: '0 12px'
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                                {budgetItems.map((budgetItem, budgetIndex) => (
+                                  <Tag 
+                                    key={budgetIndex}
+                                    icon={budgetItem.icon}
+                                    color="success"
+                                    style={{
+                                      padding: '6px 12px',
+                                      fontSize: '14px',
+                                      borderRadius: 20
+                                    }}
+                                  >
+                                    {budgetItem.label}: {budgetItem.value}
+                                  </Tag>
+                                ))}
+                              </div>
+                            </Card>
+                          )}
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                );
+              }}
             />
           </Card>
         </div>
@@ -232,11 +426,14 @@ const PlanDetail = () => {
       
       <Footer style={{ 
         textAlign: 'center', 
-        background: '#f0f2f5',
+        background: 'linear-gradient(to right, #f0f2f5, #ffffff)',
         borderTop: '1px solid #e8e8e8',
-        padding: '16px 5%'
+        padding: '24px 5%'
       }}>
-        <Text type="secondary">智能旅行规划系统 ©{new Date().getFullYear()} 让每一次旅行都成为美好回忆</Text>
+        <Text type="secondary" style={{ fontSize: '16px' }}>
+          <EnvironmentOutlined style={{ marginRight: 8 }} />
+          智能旅行规划系统 ©{new Date().getFullYear()} 让每一次旅行都成为美好回忆
+        </Text>
       </Footer>
     </Layout>
   );
