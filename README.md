@@ -41,13 +41,13 @@ docker-compose up --build
 
 ### 使用预构建的 Docker 镜像运行
 
-``bash
+```bash
 docker run -p 3000:3000 work3-frontend
 ```
 
 ### 使用 Docker Compose 构建和运行
 
-``bash
+```bash
 docker-compose up --build
 ```
 
