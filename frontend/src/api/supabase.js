@@ -16,6 +16,7 @@ export const saveTravelPlan = async (user_id, planData) => {
           highlights: planData.highlights,
           route_points: planData.routePoints,
           daily_plan: planData.dailyPlan,
+          preferences: planData.preferences || [], // 添加preferences字段
           created_at: new Date().toISOString()
         }
       ])

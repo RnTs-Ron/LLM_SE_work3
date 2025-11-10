@@ -13,7 +13,9 @@ import {
   CarOutlined,
   HomeOutlined,
   ShoppingOutlined,
-  TeamOutlined
+  TeamOutlined,
+  HeartOutlined,
+  HeartFilled
 } from '@ant-design/icons';
 import { deleteTravelPlan } from './api/supabase';
 
@@ -282,6 +284,28 @@ const PlanDetail = () => {
                   {calculateTotalBudget(plan.daily_plan || plan.dailyPlan)}
                 </Tag>
               </Descriptions.Item>
+              
+              {/* 偏好信息展示 */}
+              {plan.preferences && plan.preferences.length > 0 && (
+                <Descriptions.Item label={<><HeartOutlined /> 偏好</>}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                    {plan.preferences.map((preference, index) => (
+                      <Tag 
+                        key={index}
+                        icon={<HeartFilled />}
+                        color="magenta"
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '14px',
+                          borderRadius: 16
+                        }}
+                      >
+                        {preference}
+                      </Tag>
+                    ))}
+                  </div>
+                </Descriptions.Item>
+              )}
             </Descriptions>
             
             {(plan.highlights || plan.highlights?.length > 0) && (

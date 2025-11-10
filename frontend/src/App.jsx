@@ -336,6 +336,11 @@ function App() {
       userInputContent = `从${travelInfoRef.current.origin}到${travelInfoRef.current.destination}，${travelInfoRef.current.days}天，预算${travelInfoRef.current.budget}元，${travelInfoRef.current.people}人`;
     }
     
+    // 如果有偏好信息，则添加到用户输入中
+    if (travelInfoRef.current.preferences && travelInfoRef.current.preferences.length > 0) {
+      userInputContent += `，偏好：${travelInfoRef.current.preferences.join('、')}`;
+    }
+    
     const budgetReminder = `（请把每日花费累加，总花费必须≥${travelInfoRef.current.budget * 0.8}且≤${travelInfoRef.current.budget}，否则请调整酒店/餐饮档次，万不得已才超并在JSON前说明原因）`;
     history.push({
       role: 'user',
@@ -472,12 +477,13 @@ function App() {
       money = Math.round(money * randomFactor);
     
       // 动态平衡：按比例分配各项预算
-      // 住宿费用：除了最后一天每天都必须有住宿费用
+      // 住宿费用：除了最后一天每天都必须有住宿费用，且费用固定
       let zhu = 0;
       if (!isLast) {
-        // 住宿费用占总预算的25%-35%
-        const accommodationPercentage = 0.25 + Math.random() * 0.1;
-        zhu = Math.max(0, Math.round(money * accommodationPercentage));
+        // 计算固定的住宿费用（总预算的25%平均分配到除最后一天外的每一天）
+        const totalAccommodationBudget = Math.round(userBudget * 0.25);
+        const accommodationDays = days - 1; // 除最后一天外的天数
+        zhu = Math.round(totalAccommodationBudget / accommodationDays);
       }
         
       // 餐饮费用占总预算的20%-30%
@@ -503,15 +509,14 @@ function App() {
       const entertainmentPercentage = 0.05 + Math.random() * 0.05;
         let entertainment = Math.max(0, Math.round(money * entertainmentPercentage));
         
-      // 调整其他费用，确保总和等于预算（交通费已固定为6%）
-      const totalWithoutTransport = zhu + can + men + shopping + entertainment;
-      const remaining = Math.max(0, money - totalWithoutTransport - jiao);
+      // 调整其他费用，确保总和等于预算（交通费已固定为6%，住宿费已固定）
+      const totalWithoutTransportAndAccommodation = can + men + shopping + entertainment;
+      const remaining = Math.max(0, money - totalWithoutTransportAndAccommodation - jiao - zhu);
       
       // 将剩余预算按比例分配给其他项目
       if (remaining > 0) {
-        const totalWeights = (zhu > 0 ? 1 : 0) + 1 + (men > 0 ? 1 : 0) + 1 + 1;
+        const totalWeights = 1 + (men > 0 ? 1 : 0) + 1 + 1;
         if (totalWeights > 0) {
-          if (zhu > 0) zhu += Math.round(remaining * (zhu > 0 ? 1 : 0) / totalWeights);
           can += Math.round(remaining * 1 / totalWeights);
           if (men > 0) men += Math.round(remaining * (men > 0 ? 1 : 0) / totalWeights);
           shopping += Math.round(remaining * 1 / totalWeights);
@@ -531,13 +536,14 @@ function App() {
       
       // 解析第一天的各项费用
       const firstDayBudget = fixedDaily[0].budget;
+      const firstDayZhu = parseInt(firstDayBudget.match(/住宿: ¥(\d+)/)?.[1] || 0);
       const firstDayCan = parseInt(firstDayBudget.match(/餐饮: ¥(\d+)/)?.[1] || 0);
       const firstDayJiao = parseInt(firstDayBudget.match(/交通: ¥(\d+)/)?.[1] || 0);
       const firstDayShopping = parseInt(firstDayBudget.match(/购物: ¥(\d+)/)?.[1] || 0);
       const firstDayEntertainment = parseInt(firstDayBudget.match(/娱乐: ¥(\d+)/)?.[1] || 0);
       const firstDayMen = parseInt(firstDayBudget.match(/门票: ¥(\d+)/)?.[1] || 0);
       
-      // 最后一天的费用设置为第一天的50%
+      // 最后一天的费用设置为第一天的40%
       const can = Math.max(0, Math.round(firstDayCan * 0.4));
       const jiao = Math.max(0, Math.round(firstDayJiao * 0.4));
       const shopping = Math.max(0, Math.round(firstDayShopping * 0.4));
