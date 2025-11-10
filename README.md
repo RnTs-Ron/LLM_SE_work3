@@ -17,14 +17,25 @@ docker run -p 3000:3000 crpi-syu7xl7jm01it12d.cn-hangzhou.personal.cr.aliyuncs.c
 然后在浏览器中访问 `http://localhost:3000` 即可使用应用。
 已有账号 ：12345@qq.com     密码 ：123456
 
+### 本地直接运行镜像
+
+当前代码仓库里的源代码已经构建了镜像，可以直接运行。确保docker环境正在运行。
+
+```bash
+# 加载镜像
+docker load -i ai-travel-planner.tar
+
+# 运行镜像
+docker run -p 3000:3000 work3-frontend
+```
+
+
 ### 高德地图key 和 通义千问key
 
 ```bash
 高德 ： 616e80454cb4254bd789854f4051aa0a
 
 通义 ： sk-ddbe5248245142a7847eb177ac475d0c
-
-
 ```
 ### 从源码构建和运行
 
