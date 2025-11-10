@@ -166,7 +166,7 @@ docker build -t ai-travel-planner .
 
 2. 运行容器：
 ```bash
-docker run -p 3000:3000 --env-file .env ai-travel-planner
+docker run -p 3000:3000 --env-file ai-travel-planner
 ```
 
 ### 使用 Docker Compose 运行（推荐）

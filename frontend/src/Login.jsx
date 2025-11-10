@@ -67,8 +67,9 @@ const Login = () => {
       <Content style={{
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'flex-start', // 改为flex-start而不是center
         padding: '20px',
+        paddingTop: '160px', // 添加顶部padding使整体上移
       }}>
         <Row gutter={24} style={{ width: '100%', maxWidth: 1200, justifyContent: 'center' }}>
           <Col xs={24} md={12}>
