@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { parseBudget } from './utils/chineseBudget';
+import { parseBudget, extractInfoFromInput, isTravelInfoComplete } from './utils/chineseBudget';
 // 放在 util.js 或直接贴 App.jsx 顶部
 function extractJSON(str) {
   // 匹配最外层 {} 里的全部内容
@@ -46,7 +46,9 @@ import {
   CalendarOutlined,
   LogoutOutlined,
   SaveOutlined,
-  StarOutlined
+  StarOutlined,
+  HeartOutlined,
+  HeartFilled
 } from '@ant-design/icons';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -226,169 +228,6 @@ function App() {
     return info.origin && info.destination && info.days && info.budget && info.people;
   };
 
-  // 从用户输入中提取信息
-  function extractInfoFromInput(input) {
-    // 检查是否是重新开始的指令
-    const restartPatterns = [
-      /不好[，,]?\s*换一个/,
-      /换一个[，,]?\s*不好/,
-      /重新开始/,
-      /换一个/,
-      /重新来/,
-      /再来一次/,
-      /不好/,
-      /换方案/,
-      /换个方案/,
-      /重新规划/
-    ];
-    
-    // 如果匹配到重新开始的指令，清空当前计划和行程信息
-    for (const pattern of restartPatterns) {
-      if (pattern.test(input)) {
-        // 清除当前旅行计划
-        setTravelPlan(null);
-        // 清除旅行信息引用
-        travelInfoRef.current = {
-          origin: null,
-          destination: null,
-          days: null,
-          budget: null,
-          people: null
-        };
-        // 清除地图上的数据
-        if (mapInstance.current) {
-          mapInstance.current.clearMap();
-        }
-        // 返回空信息对象，触发重新询问
-        return {};
-      }
-    }
-    
-    const info = {};
-  
-    /* 1. 出发地 + 目的地  支持「从A到B」 */
-    const fromToMatch = input.match(/从(.+?)到(.+)/);
-    if (fromToMatch) {
-      let fromCity = fromToMatch[1].trim().replace(/[，,\s。]+$/, '');
-      let toCity   = fromToMatch[2].trim().replace(/[，,\s。]+$/, '');
-  
-      /* 1.1 天数：优先在 toCity 找 */
-      const daysMatch = toCity.match(/(\d{1,2})[天日]|(?:住|玩|行程|计划)(\d{1,2})[天日]/);
-      if (daysMatch) info.days = daysMatch[1] || daysMatch[2];
-  
-      /* 1.2 预算：统一用 parseBudget（支持 5千/5万/1.5万/一万二千） */
-      const budget = parseBudget(toCity);
-      if (budget) info.budget = String(budget);
-      
-      /* 1.3 人数：查找人数信息 */
-      const peopleMatch = toCity.match(/(\d{1,2})[人个]|(?:我们|一共|总共)(\d{1,2})[人个]/);
-      if (peopleMatch) info.people = peopleMatch[1] || peopleMatch[2];
-  
-      /* 1.4 清理 toCity 里的天数/预算词，剩下就是目的地 */
-      const cleanDest = toCity
-        .replace(/(\d{1,2})[天日]|(?:住|玩|行程|计划)(\d{1,2})[天日]/, '')
-        .replace(/(\d+\.?\d*[万千百]?[元块]?预算|预算.*?[万千百])/g, '')
-        .replace(/(\d{1,2})[人个]|(?:我们|一共|总共)(\d{1,2})[人个]/, '')
-        .trim();
-      if (cleanDest.length > 1 && cleanDest.length <= 12) info.destination = cleanDest;
-  
-      if (fromCity !== cleanDest) info.origin = fromCity;
-    } else {
-      /* 2. 没有「从 A 到 B」时的兜底 */
-      const destMatch = input.match(/(?:(?:去|到|在|玩|旅游|前往)(.+?))(?:[，,\s]|$)/);
-      if (destMatch) {
-        const raw = destMatch[1].replace(/[，,\s。]+$/, '');
-        if (raw.length > 1 && raw.length <= 12) info.destination = raw;
-      }
-      
-      /* 2.1 出发地提取 - 单独处理出发地 */
-      // 改进出发地提取逻辑，支持更多表达方式
-      const originPatterns = [
-        /(?:从|出发地是|在)(.+?)(?:出发|去)/,  // 原有模式：从北京出发
-        /出发地[是为]?(.+?)[\s，,。]?$/,      // 新增模式：出发地是北京
-        /(?:从|由)(.+?)出发/,                // 新增模式：从北京出发
-        /^出发地(.+?)[\s，,。]?$/,           // 新增模式：出发地北京
-        /从(.+?)(?:去|到)/                    // 新增模式：从北京去
-      ];
-      
-      for (const pattern of originPatterns) {
-        const originMatch = input.match(pattern);
-        if (originMatch) {
-          const rawOrigin = originMatch[1].trim().replace(/[，,\s。]+$/, '');
-          // 验证提取的出发地不是一些常见的动词或通用词
-          const invalidOrigins = ['这', '那', '这里', '那里', '这边', '那边'];
-          if (rawOrigin.length > 1 && rawOrigin.length <= 12 && !invalidOrigins.includes(rawOrigin)) {
-            info.origin = rawOrigin;
-            break; // 找到第一个匹配就停止
-          }
-        }
-      }
-      
-      // 如果以上模式都没匹配，尝试将整个输入作为出发地（简单地点名称）
-      if (!info.origin) {
-        const trimmedInput = input.trim().replace(/[，,\s。]+$/, '');
-        const invalidOrigins = ['这', '那', '这里', '那里', '这边', '那边', '出发地', '你好', '您好'];
-        if (trimmedInput.length > 1 && trimmedInput.length <= 12 && !invalidOrigins.includes(trimmedInput)) {
-          // 额外检查，确保输入不是完整句子
-          if (!/[？?！!]/.test(trimmedInput) && trimmedInput.split(/\s+/).length <= 3) {
-            info.origin = trimmedInput;
-          }
-        }
-      }
-      
-      /* 3. 天数 - 阿拉伯 & 中文 */
-      const arabicDays = input.match(/(\d{1,2})[天日]/);
-      if (arabicDays) { info.days = arabicDays[1]; }
-      else {
-        // 添加对"一周"、"两周"等表达的支持
-        const weekMatch = input.match(/(一|二|两|三|四|五|六|七|八|九|十|十一|十二|十三|十四|十五|十六|十七|十八|十九|二十)[周週]/);
-        if (weekMatch) {
-          const cnMap = {
-            一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 
-            六: 6, 七: 7, 八: 8, 九: 9, 十: 10, 
-            十一: 11, 十二: 12, 十三: 13, 十四: 14, 十五: 15,
-            十六: 16, 十七: 17, 十八: 18, 十九: 19, 二十: 20
-          };
-          const weekNum = cnMap[weekMatch[1]];
-          if (weekNum) {
-            info.days = String(weekNum * 7); // 一周=7天
-          }
-        } else {
-          const cnMap = {
-            一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 
-            六: 6, 七: 7, 八: 8, 九: 9, 十: 10, 
-            十一: 11, 十二: 12, 十三: 13, 十四: 14, 十五: 15,
-            十六: 16, 十七: 17, 十八: 18, 十九: 19, 二十: 20
-          };
-          for (const [cn, num] of Object.entries(cnMap)) {
-            if (new RegExp(cn + '[天日]').test(input)) { 
-              info.days = String(num); 
-              break; 
-            }
-          }
-        }
-      }
-      /* 4. 预算 - 统一用 parseBudget */
-      const budget = parseBudget(input);
-      if (budget) info.budget = String(budget);
-      
-      /* 5. 人数 */
-      const peopleMatch = input.match(/(\d{1,2})[人个]|(?:我们|一共|总共)(\d{1,2})[人个]/);
-      if (peopleMatch) info.people = peopleMatch[1] || peopleMatch[2];
-      else {
-        const cnPeopleMap = {一:1,二:2,两:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9,十:10};
-        for (const [cn, num] of Object.entries(cnPeopleMap)) {
-          if (new RegExp('(我们|一共|总共)?' + cn + '[人个]').test(input)) { 
-            info.people = String(num); 
-            break; 
-          }
-        }
-      }
-    }
-  
-    return info;
-  }
-
   const processWithLLM = async (userInput) => {
     if (planningLock) return;
     setPlanningLock(true);
@@ -398,7 +237,24 @@ function App() {
     
     // 检查是否是重新开始的指令
     if (Object.keys(newInfo).length === 0) {
-      // 是重新开始的指令，发送提示消息
+      // 是重新开始的指令，清除地图上的规划记录
+      if (mapInstance.current) {
+        mapInstance.current.clearMap();
+      }
+      
+      // 清除当前旅行计划
+      setTravelPlan(null);
+      
+      // 清除旅行信息引用
+      travelInfoRef.current = {
+        origin: null,
+        destination: null,
+        days: null,
+        budget: null,
+        people: null
+      };
+      
+      // 发送提示消息
       setMessages(prev => [...prev, { 
         id: Date.now(), 
         sender: 'ai', 
@@ -416,6 +272,7 @@ function App() {
       days: newInfo.days || travelInfoRef.current.days,
       budget: newInfo.budget || travelInfoRef.current.budget,
       people: newInfo.people || travelInfoRef.current.people,
+      preferences: newInfo.preferences || travelInfoRef.current.preferences,
     };
   
     // 2.2 缺失字段检测
@@ -627,9 +484,8 @@ function App() {
       const diningPercentage = 0.2 + Math.random() * 0.1;
         let can = Math.max(0, Math.round(money * diningPercentage));
         
-      // 市内交通费用占总预算的10%-20%
-      const transportPercentage = 0.1 + Math.random() * 0.1;
-        let jiao = Math.max(0, Math.round(money * transportPercentage));
+      // 市内交通费用占当日总消费的6%
+      let jiao = Math.max(0, Math.round(money * 0.06));
         
       // 门票费用（最后一天无门票）
       let men = 0;
@@ -647,17 +503,16 @@ function App() {
       const entertainmentPercentage = 0.05 + Math.random() * 0.05;
         let entertainment = Math.max(0, Math.round(money * entertainmentPercentage));
         
-      // 将原本分配给"其他"的预算重新分配到现有类别
-      const totalAllocated = zhu + can + jiao + men + shopping + entertainment;
-      const remaining = Math.max(0, money - totalAllocated);
-        
-      // 按比例将剩余预算分配到各项支出中
+      // 调整其他费用，确保总和等于预算（交通费已固定为6%）
+      const totalWithoutTransport = zhu + can + men + shopping + entertainment;
+      const remaining = Math.max(0, money - totalWithoutTransport - jiao);
+      
+      // 将剩余预算按比例分配给其他项目
       if (remaining > 0) {
-        const totalWeights = (zhu > 0 ? 1 : 0) + 1 + 1 + (men > 0 ? 1 : 0) + 1 + 1;
+        const totalWeights = (zhu > 0 ? 1 : 0) + 1 + (men > 0 ? 1 : 0) + 1 + 1;
         if (totalWeights > 0) {
           if (zhu > 0) zhu += Math.round(remaining * (zhu > 0 ? 1 : 0) / totalWeights);
           can += Math.round(remaining * 1 / totalWeights);
-          jiao += Math.round(remaining * 1 / totalWeights);
           if (men > 0) men += Math.round(remaining * (men > 0 ? 1 : 0) / totalWeights);
           shopping += Math.round(remaining * 1 / totalWeights);
           entertainment += Math.round(remaining * 1 / totalWeights);
@@ -670,7 +525,7 @@ function App() {
       };
     });
     
-    // 特殊处理最后一天的预算：将其餐饮、交通、购物、娱乐设置为第一天的50%
+    // 特殊处理最后一天的预算：将其各项费用设置为第一天的50%
     if (fixedDaily.length > 1) {
       const lastDayIndex = fixedDaily.length - 1;
       
@@ -680,14 +535,15 @@ function App() {
       const firstDayJiao = parseInt(firstDayBudget.match(/交通: ¥(\d+)/)?.[1] || 0);
       const firstDayShopping = parseInt(firstDayBudget.match(/购物: ¥(\d+)/)?.[1] || 0);
       const firstDayEntertainment = parseInt(firstDayBudget.match(/娱乐: ¥(\d+)/)?.[1] || 0);
+      const firstDayMen = parseInt(firstDayBudget.match(/门票: ¥(\d+)/)?.[1] || 0);
       
       // 最后一天的费用设置为第一天的50%
-      const can = Math.max(0, Math.round(firstDayCan * 0.5));
-      const jiao = Math.max(0, Math.round(firstDayJiao * 0.5));
-      const shopping = Math.max(0, Math.round(firstDayShopping * 0.5));
-      const entertainment = Math.max(0, Math.round(firstDayEntertainment * 0.5));
+      const can = Math.max(0, Math.round(firstDayCan * 0.4));
+      const jiao = Math.max(0, Math.round(firstDayJiao * 0.4));
+      const shopping = Math.max(0, Math.round(firstDayShopping * 0.4));
+      const entertainment = Math.max(0, Math.round(firstDayEntertainment * 0.4));
+      const men = Math.max(0, Math.round(firstDayMen * 0.4));
       const zhu = 0; // 最后一天住宿费用为0
-      const men = 0; // 最后一天门票费用为0
       
       // 更新最后一天的预算
       fixedDaily[lastDayIndex].budget = `住宿: ¥${zhu}, 餐饮: ¥${can}, 交通: ¥${jiao}, 门票: ¥${men}, 购物: ¥${shopping}, 娱乐: ¥${entertainment}`;
@@ -716,7 +572,8 @@ function App() {
       budget: `¥${userBudget}/${travelInfoRef.current.people}人`,
       highlights: jsonData.highlights || [],
       routePoints: jsonData.routePoints || [],
-      dailyPlan: fixedDaily
+      dailyPlan: fixedDaily,
+      preferences: travelInfoRef.current.preferences || []
     };
     
     setTravelPlan(planData);
@@ -1428,6 +1285,29 @@ function App() {
                                   {calculateTotalBudget(travelPlan.dailyPlan)}
                                 </Tag>
                               </Descriptions.Item>
+                              
+                              {/* 偏好信息展示 */}
+                              {travelPlan.preferences && travelPlan.preferences.length > 0 && (
+                                <Descriptions.Item label={<><HeartOutlined /> 偏好</>}>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                                    {travelPlan.preferences.map((preference, index) => (
+                                      <Tag 
+                                        key={index}
+                                        icon={<HeartFilled />}
+                                        color="magenta"
+                                        style={{
+                                          padding: '4px 8px',
+                                          fontSize: '14px',
+                                          borderRadius: 16
+                                        }}
+                                      >
+                                        {preference}
+                                      </Tag>
+                                    ))}
+                                  </div>
+                                </Descriptions.Item>
+                              )}
+
                             </Descriptions>
 
                             {(travelPlan.highlights && travelPlan.highlights.length > 0) && (
@@ -1557,7 +1437,11 @@ function App() {
                               borderBottom: '1px solid #e8e8e8'
                             }}
                           >
-                            <div style={{ flex: 1, overflow: 'auto' }}>
+                            <div style={{ 
+                              flex: 1, 
+                              overflowY: 'auto',
+                              maxHeight: travelPlan.dailyPlan && travelPlan.dailyPlan.length > 6 ? '400px' : 'none'
+                            }}>
                               <List
                                 itemLayout="vertical"
                                 dataSource={travelPlan.dailyPlan}

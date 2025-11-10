@@ -146,7 +146,7 @@ const UserHome = () => {
               onClick={() => navigate('/')}
               style={{ color: 'white', marginRight: 16 }}
             >
-              <HomeOutlined /> 主页
+              <HomeOutlined /> 首页
             </Button>
             <Text style={{ color: 'white', marginRight: 16 }}>欢迎您, {user?.email}</Text>
             <Button 

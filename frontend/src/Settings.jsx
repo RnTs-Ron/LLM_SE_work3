@@ -35,25 +35,30 @@ const Settings = () => {
         body: JSON.stringify({ model: 'qwen-turbo', messages: [{ role: 'user', content: '你好' }] })
       });
       const data = await res.json();
-      if (res.ok && data.choices?.[0]?.message?.content) message.success('Key 有效');
+      if (res.ok && data.choices?.[0]?.message?.content) message.success('通义Key 有效');
       else message.error('Key 无效：' + (data.error?.message || '未知错误'));
     } catch (e) { message.error('网络错误：' + e.message); }
   };
 
   // 测试高德
-  const testAmap = () => {
+  const testAmap = async () => {
     const { amapApiKey } = form.getFieldsValue(true);
-    if (!amapApiKey || amapApiKey.length < 20) return message.error('格式太短');
-    message.success('高德 Key 格式校验通过');
-  };
-
-  // 测试科大讯飞API
-  const testXunfei = () => {
-    const { xunfeiAppId, xunfeiApiKey, xunfeiApiSecret } = form.getFieldsValue(true);
-    if (!xunfeiAppId || !xunfeiApiKey || !xunfeiApiSecret) {
-      return message.warning('请填写完整的科大讯飞API配置');
+    if (!amapApiKey) return message.warning('请先填写高德 Key');
+    if (amapApiKey.length < 20) return message.error('高德 Key 格式太短');
+    
+    try {
+      // 调用高德地图API测试Key有效性
+      const response = await fetch(`https://restapi.amap.com/v3/ip?output=json&key=${amapApiKey}`);
+      const data = await response.json();
+      
+      if (data.status === '1') {
+        message.success('高德 Key 有效');
+      } else {
+        message.error('高德 Key 无效: ' + (data.info || '未知错误'));
+      }
+    } catch (e) {
+      message.error('网络错误: ' + e.message);
     }
-    message.success('科大讯飞API配置已保存');
   };
 
   const handleSignOut = async () => {
@@ -70,11 +75,11 @@ const Settings = () => {
   const tabItems = [
     {
       key: 'api',
-      label: 'API 密钥',
+      label: '',
       children: (
         <Form form={form} layout="vertical" onFinish={handleSave}>
           <Divider>高德地图</Divider>
-          <Form.Item name="amapApiKey" label="Web 端 Key" extra="保存后刷新页面生效">
+          <Form.Item name="amapApiKey" label="高德 Key">
             <Input.Password placeholder="高德地图 Key" size="large" />
           </Form.Item>
           <Form.Item>
@@ -82,40 +87,20 @@ const Settings = () => {
           </Form.Item>
 
           <Divider>通义千问</Divider>
-          <Form.Item name="llmApiKey" label="兼容模式 API Key">
+          <Form.Item name="llmApiKey" label="通义 Key">
             <Input.Password placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" size="large" />
           </Form.Item>
           <Form.Item>
             <Button onClick={testLLM} style={{ marginRight: 8 }}>测试</Button>
           </Form.Item>
           
-          <Divider>科大讯飞语音识别</Divider>
-          <Form.Item name="xunfeiAppId" label="AppID">
-            <Input.Password placeholder="科大讯飞 AppID" size="large" />
-          </Form.Item>
-          <Form.Item name="xunfeiApiKey" label="API Key">
-            <Input.Password placeholder="科大讯飞 API Key" size="large" />
-          </Form.Item>
-          <Form.Item name="xunfeiApiSecret" label="API Secret">
-            <Input.Password placeholder="科大讯飞 API Secret" size="large" />
-          </Form.Item>
           <Form.Item>
-            <Button onClick={testXunfei} style={{ marginRight: 8 }}>测试</Button>
-            <Button type="primary" htmlType="submit">保存</Button>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+              <Button type="primary" htmlType="submit">保存</Button>
+              <Button onClick={() => navigate('/')}>返回首页</Button>
+            </div>
           </Form.Item>
         </Form>
-      )
-    },
-    {
-      key: 'help',
-      label: '使用说明',
-      children: (
-        <ul>
-          <li>通义千问 Key：<a href="https://bailian.console.aliyun.com" target="_blank" rel="noreferrer">百炼控制台</a></li>
-          <li>高德 Key：<a href="https://console.amap.com" target="_blank" rel="noreferrer">高德开放平台</a></li>
-          <li>科大讯飞语音：<a href="https://www.xfyun.cn" target="_blank" rel="noreferrer">科大讯飞开放平台</a></li>
-          <li>填写后务必点击「保存」</li>
-        </ul>
       )
     }
   ];
@@ -153,7 +138,7 @@ const Settings = () => {
               onClick={() => navigate('/')}
               style={{ color: 'white', marginRight: 16 }}
             >
-              <HomeOutlined /> 主页
+              <HomeOutlined /> 首页
             </Button>
             <Button 
               type="text" 
@@ -175,8 +160,13 @@ const Settings = () => {
       }}>
         <Card style={{ width: '100%', maxWidth: 600, margin: '0 auto' }}>
           <Tabs items={tabItems} />
-          <div style={{ textAlign: 'center', marginTop: 24 }}>
-            <Button onClick={() => navigate('/')}>返回首页</Button>
+          <div style={{ textAlign: 'left', paddingTop: 72, color: '#999999' }}>
+            <ul>
+              <li>通义千问 Key：<a href="https://bailian.console.aliyun.com" target="_blank" rel="noreferrer">百炼控制台</a></li>
+              <li>高德地图 Key：<a href="https://console.amap.com" target="_blank" rel="noreferrer">高德开放平台</a></li>
+              <li>语音功能使用浏览器原生语音接口，确保浏览器支持语音识别</li>
+              <li>填写后务必点击「保存」</li>
+            </ul>
           </div>
         </Card>
       </Content>
