@@ -1107,7 +1107,7 @@ function App() {
                       }}>
                         <TextArea
                           rows={3}
-                          placeholder="描述您的旅行需求，如：我们准备从北京出发去上海旅游6天，预算1万2千元，2个人。"
+                          placeholder="描述您的旅行需求，如：我们准备从北京出发去上海旅游6天，预算1万2千元，2个人，喜欢美食和动漫。"
                           value={inputValue}
                           onChange={(e) => setInputValue(e.target.value)}
                           onPressEnter={handleSend}

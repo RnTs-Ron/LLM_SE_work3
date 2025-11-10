@@ -1,16 +1,64 @@
-# AI旅行规划师 (AI Travel Planner)
+# AI 旅行规划助手
+
+这是一个基于 AI 的智能旅行规划系统，可以根据用户需求自动生成个性化的旅行计划。
+
+## 快速开始
+
+### 从阿里云拉取并运行镜像
+
+```bash
+# 拉取镜像
+docker pull crpi-syu7xl7jm01it12d.cn-hangzhou.personal.cr.aliyuncs.com/ning_nju/llm_work3:1.0
+
+# 运行镜像
+docker run -p 3000:3000 crpi-syu7xl7jm01it12d.cn-hangzhou.personal.cr.aliyuncs.com/ning_nju/llm_work3:1.0
+```
+
+然后在浏览器中访问 `http://localhost:3000` 即可使用应用。
+
+### 高德地图key 和 通义千问key
+
+高德 ： 616e80454cb4254bd789854f4051aa0a
+通义 ： sk-ddbe5248245142a7847eb177ac475d0c
+
+### 从源码构建和运行
+
+如果您希望从源码构建项目：
+
+1. 克隆项目仓库
+2. 进入 `frontend` 目录
+3. 执行 `npm install` 安装依赖
+4. 启动开发服务器：`npm run dev`
+
+或者使用 Docker Compose 构建和运行：
+
+```bash
+docker-compose up --build
+```
+
+### 使用预构建的 Docker 镜像运行
+
+``bash
+docker run -p 3000:3000 work3-frontend
+```
+
+### 使用 Docker Compose 构建和运行
+
+``bash
+docker-compose up --build
+```
 
 ## 项目概述
 
 AI旅行规划师是一个基于Web的智能旅行规划系统，旨在通过AI技术为用户提供个性化、高效的旅行规划服务。用户可以通过自然语言交互描述旅行需求，系统将自动生成详细的旅行路线、预算分析和实时辅助功能。
 
-### 项目背景
+## 核心功能
 
-随着旅游业的快速发展，越来越多的人需要个性化、高效的旅行规划服务。传统旅行规划过程繁琐耗时，用户需要在多个平台收集信息、制定行程、管理预算。本项目旨在通过AI技术简化这一过程，为用户提供智能化的旅行规划体验。
-
-### 项目目标
-
-开发一个基于Web的AI旅行规划系统，通过自然语言交互理解用户需求，自动生成个性化旅行路线，并提供实时旅行辅助功能。
+1. 智能旅行规划 - 根据用户输入的简单信息生成详细的旅行计划
+2. 费用预算分析 - 自动生成旅行预算并跟踪实际开销
+3. 地图可视化 - 结合高德地图显示路线和地点信息
+4. 用户账户系统 - 注册登录和旅行计划保存
+5. 多平台支持 - 响应式设计，支持桌面和移动设备
 
 ### 目标用户
 
@@ -19,144 +67,119 @@ AI旅行规划师是一个基于Web的智能旅行规划系统，旨在通过AI�
 - 商务旅行人士
 - 旅行爱好者
 
-## 核心功能
-
-### 1. 智能行程规划
-
-- **多种输入方式**：
-  - 语音输入：支持语音识别，用户可通过语音描述旅行需求
-  - 文字输入：提供文本输入框，支持详细的需求描述
-  - 结构化输入：提供表单式输入选项（目的地、日期、预算等）
-
-- **输入参数**：
-  - 旅行目的地（必填）
-  - 旅行日期范围（必填）
-  - 预算金额（必填）
-  - 同行人数（必填）
-  - 旅行偏好（美食、文化、购物、户外等）
-  - 特殊需求（带孩子、老年人、商务等）
-
-- **行程输出内容**：
-  - 详细日程安排
-  - 交通路线规划
-  - 住宿推荐
-  - 景点游览建议
-  - 餐厅推荐
-  - 活动安排
-
-### 2. 费用预算与管理
-
-- **预算分析**：
-  - AI自动分析预算分配
-  - 各项费用预估（交通、住宿、餐饮、门票等）
-  - 预算合理性检查
-
-- **费用记录**：
-  - 支持语音记录开销
-  - 手动输入费用
-  - 费用分类管理
-  - 预算执行情况跟踪
-
-### 3. 用户管理与数据存储
-
-- **用户账户系统**：
-  - 用户注册/登录
-  - 个人信息管理
-  - 偏好设置存储
-
-- **数据管理**：
-  - 多份旅行计划保存
-  - 云端数据同步
-  - 多设备访问支持
-  - 历史行程查看
-
 ## 技术架构
 
 ### 前端技术栈
 
-- **框架**：React/Vue.js（现代前端框架）
-- **地图组件**：高德地图/百度地图API
-- **UI组件库**：Ant Design/Material-UI
-- **语音识别**：科大讯飞API或其他语音识别服务
-- **状态管理**：Redux/Pinia
-- **构建工具**：Webpack/Vite
+- **框架**：React 18
+- **构建工具**：Vite
+- **UI组件库**：Ant Design
+- **状态管理**：React Context API
+- **路由管理**：React Router v7
+- **地图组件**：高德地图API
+- **认证服务**：Supabase Authentication
+- **数据库**：Supabase
 
-### 后端技术栈
+## 项目结构
 
-- **运行时**：Node.js/Python
-- **框架**：Express.js/FastAPI
-- **数据库**：Supabase/Firebase
-- **认证服务**：Firebase Authentication/Supabase Auth
-- **文件存储**：云存储服务
+```
+.
+├── frontend/                 # 前端应用
+│   ├── src/                  # 源代码
+│   │   ├── components/       # React 组件
+│   │   ├── contexts/         # React Context
+│   │   ├── utils/            # 工具函数
+│   │   ├── App.jsx           # 主应用组件
+│   │   └── main.jsx          # 应用入口文件
+│   ├── package.json          # 前端依赖配置
+│   └── vite.config.js        # Vite 配置
+├── supabase/                 # Supabase 配置和函数
+│   └── functions/            # Edge Functions
+├── README.md                 # 项目说明文档
+├── docker-compose.yml        # Docker 编排配置
+└── ai-travel-planner.tar     # 已构建的 Docker 镜像文件
+```
 
-### AI服务集成
+## 环境变量配置
 
-- **大语言模型**：OpenAI GPT/阿里云百炼/其他LLM服务
-- **语音处理**：语音识别和合成API
-- **地理位置**：地图API服务
+在运行项目之前，请确保配置了正确的环境变量。在 frontend 目录下创建 `.env` 文件并配置以下 Supabase 凭据：
 
-### 部署架构
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-- **容器化**：Docker
-- **镜像仓库**：阿里云容器镜像服务
-- **CI/CD**：GitHub Actions
-- **托管服务**：云服务器或容器服务
+注意：高德地图和通义千问的 API Key 由用户在应用的设置页面中配置，不需要在环境变量中设置。
 
-## 非功能性需求
+您可以参考 frontend 目录下的 `.env.example` 文件创建您的 `.env` 文件。
 
-### 可维护性需求
+## 开发环境运行
 
-- 模块化代码结构
-- 完整的代码注释
-- 自动化测试覆盖
-- 详细的开发文档
+1. 安装依赖：
+```bash
+cd frontend
+npm install
+```
 
-## 界面设计
+2. 启动开发服务器：
+```bash
+npm run dev
+```
 
-### 设计原则
+## 生产环境构建
 
-- 以地图为中心的交互界面
-- 清晰的行程可视化展示
-- 美观的图片和图标使用
-- 一致的视觉风格
+构建生产版本：
+```bash
+npm run build
+```
 
-### 主要页面
+预览生产构建：
+```bash
+npm run preview
+```
 
-- 首页/登录页
-- 行程规划页
-- 行程详情页
-- 预算管理页
-- 用户设置页
+## Docker 部署详解
 
-## 项目交付要求
+### 使用 Docker 直接构建和运行
 
-### 代码仓库
+1. 构建 Docker 镜像：
+```bash
+cd frontend
+docker build -t ai-travel-planner .
+```
 
-- 完整的GitHub仓库
-- 详细的提交历史记录
-- 清晰的README文档
-- 代码规范遵循
+2. 运行容器：
+```bash
+docker run -p 3000:3000 --env-file .env ai-travel-planner
+```
 
-### 部署要求
+### 使用 Docker Compose 运行（推荐）
 
-- Docker镜像文件
-- 详细的运行说明
-- 环境配置指南
-- 依赖管理
+1. 在项目根目录下运行：
+```bash
+docker-compose up --build
+```
 
-### 文档要求
+这将启动应用并绑定到主机的 3000 端口。
 
-- 安装部署文档
-- API接口文档
-- 用户使用手册
-- 技术架构说明
+### 导出 Docker 镜像
 
-## 安全注意事项
+如果您需要导出构建好的镜像以供其他环境使用：
+```bash
+docker save -o ai-travel-planner-frontend.tar work3-frontend
+```
 
-### API密钥管理
+这样导出的镜像文件可以发送给别人，他们可以通过以下步骤使用：
 
-- 严禁在代码中硬编码API密钥
-- 通过配置文件或环境变量管理密钥
-- 提供密钥输入界面供用户配置
-- GitHub仓库中排除敏感信息
+1. 将 [ai-travel-planner-frontend.tar](file://d:/Code/damoxingfuzhu/work3/ai-travel-planner-frontend.tar) 文件放在一个目录中
+2. 打开终端或命令提示符
+3. 运行 `docker load -i ai-travel-planner-frontend.tar` 加载镜像
+4. 运行 `docker run -p 3000:3000 work3-frontend` 启动容器
+5. 在浏览器中访问 http://localhost:3000
 
+## 注意事项
+
+1. 高德地图和通义千问的 API Key 由用户在设置页面自行配置
+2. 确保 `.env` 文件中包含正确的 Supabase 配置
+3. 在生产环境中，建议使用 nginx 或其他 Web 服务器来提供静态文件服务
+4. 请勿将包含敏感信息的 `.env` 文件提交到版本控制系统中
