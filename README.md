@@ -18,9 +18,12 @@ docker run -p 3000:3000 crpi-syu7xl7jm01it12d.cn-hangzhou.personal.cr.aliyuncs.c
 
 ### 高德地图key 和 通义千问key
 
+```bash
 高德 ： 616e80454cb4254bd789854f4051aa0a
+
 通义 ： sk-ddbe5248245142a7847eb177ac475d0c
 
+```
 ### 从源码构建和运行
 
 如果您希望从源码构建项目：
