@@ -8,14 +8,14 @@
 
 ```bash
 # 拉取镜像
-docker pull crpi-syu7xl7jm01it12d.cn-hangzhou.personal.cr.aliyuncs.com/ning_nju/llm_work3:1.0
+docker pull crpi-syu7xl7jm01it12d.cn-hangzhou.personal.cr.aliyuncs.com/ning_nju/llm_work3:2.0
 
 # 运行镜像
-docker run -p 3000:3000 crpi-syu7xl7jm01it12d.cn-hangzhou.personal.cr.aliyuncs.com/ning_nju/llm_work3:1.0
+docker run -p 3000:3000 crpi-syu7xl7jm01it12d.cn-hangzhou.personal.cr.aliyuncs.com/ning_nju/llm_work3:2.0
 ```
 
 然后在浏览器中访问 `http://localhost:3000` 即可使用应用。
-已有账号 ：12345@qq.com     密码 ：123456
+已有账号 ：12345@qq.com 密码 ：123456  当无法创建账号时可使用。
 
 ### 本地直接运行镜像
 
